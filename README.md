@@ -1,69 +1,76 @@
-# TinyLLM — a fully local voice assistant on a small CPU-only machine
+# 🗣️ TinyLLM — talk to your house, 100 % locally
 
-**Using small LLMs for voice control of Home Assistant — speech-to-text, LLM and text-to-speech, all running locally (no cloud) on a mini-PC without a GPU.**
+**A voice assistant for Home Assistant that listens, thinks and answers entirely on a small, cheap PC — no cloud, no GPU.**
 
-🇫🇷 Version française : [README.fr.md](README.fr.md) · [docs/fr](docs/fr/)
+🇫🇷 [Version française](README.fr.md) · 🚀 [Quick start](docs/en/00-quick-start.md) · 📖 [The full study](docs/en/)
 
-## Context
+---
 
-Can a **speech-to-text model, a large language model and a text-to-speech model run together, locally, with no cloud, on a small machine** — and be good enough to control a smart home by voice? This repository documents a working answer and measures it:
+## In a nutshell
 
-- **Hardware**: Intel Core i3-6100T (4 threads, AVX2), ~7 GB RAM, **no GPU**. A separate GPU machine (RTX 5070) is used for training only.
-- **Chain**: wake word on an Android tablet → **Whisper** (STT) → **Qwen3 fine-tuned with LoRA** served by **Ollama**, behind a **compact proxy** → Home Assistant executes the tool → **Piper** (TTS). A private **web search** (SearXNG) handles questions about the outside world.
-- **Compared**: stock LLM, **LoRA**, **RAG**, compact prompt + guard-rails; Qwen3-1.7B / Qwen3-0.6B / CroissantLLM 1.3B; Whisper tiny / base / small; Piper.
+- 🎙️ **You say** "hey Jarvis, turn off the living-room lights" — 🧠 **a tiny AI understands** — 💡 **your home obeys** — 🔊 **a voice confirms**.
+- Everything runs on **one mini-PC** (Intel i3, 4 threads, ~7 GB RAM, **no graphics card**). Your voice and your commands **never leave the house**.
+- It is **not magic**: a small model out of the box is bad at this (it gets **18 %** of our test commands right). A little **fine-tuning** takes it to **93–96 %** — this repository shows how, and measures everything.
 
-## Headline results (French benchmark, CPU only)
+## How it works
 
-| Stage | Choice | Result |
+```mermaid
+flowchart LR
+    A["🎙️ You speak"] --> B["Whisper<br/>speech → text"]
+    B --> C["Tiny LLM<br/>text → action"]
+    C --> D["🏠 Home Assistant<br/>does it"]
+    D --> E["Piper<br/>text → voice"]
+    E --> F["🔊 Answer"]
+    C -.->|questions about the world| G["🔎 Private web search"]
+```
+
+Behind the scenes a small **proxy** keeps the AI fast and safe (smaller prompt, sanity checks, honest "I don't know"). All the details are in the [architecture](docs/en/02-architecture.md).
+
+## Does it work?
+
+| | What we measured | Result |
 |---|---|---|
-| **LLM** | stock Qwen3-1.7B | **18 %** — writes tool names as text instead of calling them |
-| | + LoRA fine-tuning | **96 %** on the first tool call |
-| | + compact prompt, proxy and guard-rails (v5, in production) | **93 % / 96 %** without / with history, 0 false confirmation after an error, ~5 s per command |
-| | Qwen3-0.6B (same recipe) | same 93 % without history, **~40 % faster** (2.9 s), but weak confirmations |
-| | CroissantLLM 1.3B | 91 % / 85 %, lighter, behind Qwen3 |
-| **STT** | Whisper `small` + vocabulary prompt | **6.5 % WER** (clean), 11.5 % (noisy), ~3 s per utterance |
-| | Whisper `base` / `tiny` | 16 % / 31 % WER, 1.4 s / 0.7 s |
-| **TTS** | Piper `fr_FR-siwis-medium` | a reply in **~0.2–0.3 s** (real-time factor 0.11) |
-| **RAG** | `multilingual-e5-base` retrieval | good retrieval (94 % hit@1) but **worse end to end** and it breaks the prompt cache — not kept below ~100 devices |
-| **End to end** | | local intents ~3 s · LLM command ~9–10 s · web question ~20–26 s |
+| 🧠 **Understanding commands** | share of correct actions on 92 French test phrases | **93–96 %** (vs 18 % without fine-tuning) |
+| 🎙️ **Hearing you** | Whisper word error rate | **6.5 %** (`small` model) |
+| 🔊 **Speaking** | time to prepare a reply | **~0.2 s** |
+| ⏱️ **Speed** | whole chain, warm | simple phrase **~3 s** · command **~9–10 s** · web question **~20 s** |
 
-> Speech models were tested on **synthetic speech**, the benchmark is small and French-only, and numbers come from one machine. Read the [limits](docs/en/06-lessons-and-limits.md) before drawing conclusions.
+> ⚠️ Honest limits: one machine, French only, a small benchmark, and speech models tested on synthetic speech. See [lessons and limits](docs/en/06-lessons-and-limits.md).
 
-## Read the study
+## Why go local?
 
-| | English | Français |
-|---|---|---|
-| Context and goals | [docs/en/01](docs/en/01-context-and-goals.md) | [docs/fr/01](docs/fr/01-contexte-et-objectifs.md) |
-| Architecture and diagrams | [docs/en/02](docs/en/02-architecture.md) | [docs/fr/02](docs/fr/02-architecture.md) |
-| Methods: LoRA, RAG, compact proxy, web search | [docs/en/03](docs/en/03-methods.md) | [docs/fr/03](docs/fr/03-methodes.md) |
-| **Results** (STT, LLM, TTS, web, latency) | [docs/en/04](docs/en/04-results.md) | [docs/fr/04](docs/fr/04-resultats.md) |
-| **Advantages and drawbacks** | [docs/en/05](docs/en/05-pros-and-cons.md) | [docs/fr/05](docs/fr/05-avantages-et-inconvenients.md) |
-| Lessons, incidents, limits | [docs/en/06](docs/en/06-lessons-and-limits.md) | [docs/fr/06](docs/fr/06-lecons-et-limites.md) |
-| Reproduce it | [docs/en/07](docs/en/07-reproduce.md) | [docs/fr/07](docs/fr/07-reproduire.md) |
-
-## Repository layout
-
-| Path | Content |
+| 👍 You gain | 👎 You pay |
 |---|---|
-| `docs/en`, `docs/fr` | the study, in two languages |
-| `results/` | result tables as CSV: `stt_whisper.csv`, `tts_piper.csv`, `llm_models.csv`, `llm_stages.csv` |
-| `data/benchmark_fr_92.json` | the 92 French benchmark phrases (generic device names) |
-| `scripts/proxy` | the compact proxy (`compact_proxy.py`, `compactlib.py`, `websearch.py`) |
-| `scripts/training` | data generation, LoRA training, GGUF import, the RAG experiment |
-| `scripts/brain` | GPU-machine sessions (stop the GPU service, train, convert, restore) |
-| `scripts/bench` | LLM benchmarks, simulation checks, warm-up |
-| `scripts/stt_tts` | Whisper and Piper benchmarks (Wyoming client) |
-| `scripts/ha` | Home Assistant helpers (agent, pipeline, prompt capture) |
-| `scripts/deploy` | compose files for the proxy and SearXNG |
+| **Privacy**: nothing leaves your home | **Speed**: seconds, not milliseconds |
+| **Independence**: works without Internet | **A narrow assistant**: great at home control, weak at general chat |
+| **No fees**: your hardware, your electricity | **Some work**: data, training, tests, a proxy to maintain |
+| **Control**: you decide how it fails (safely) | **Re-train** when your devices change |
 
-Script comments and docstrings are mostly in French. Host names, paths and device names were anonymized (`*.example.lan`, `/opt/tinyllm`, generic device names); adapt them to your setup. Raw benchmark outputs are not published (they contain private device names); the tables are.
+More in [advantages and drawbacks](docs/en/05-pros-and-cons.md) (local vs cloud, and LoRA vs RAG vs compact prompt).
 
-## Safety principles kept throughout
+## Get started in 30 minutes
 
-- **No test with real execution** by a development agent: a simulation proxy strips every tool call.
-- **Production never depends on the GPU machine**, which can stay off.
-- Web queries are **anonymized**, logged for 7 days, with an **in-memory** cache only.
-- No secret in this repository.
+```bash
+git clone https://github.com/kamahat/TinyLLM.git && cd TinyLLM/quickstart
+docker compose up -d
+```
+
+Then follow the [**quick start**](docs/en/00-quick-start.md): connect Home Assistant, try a command, and learn how to make it reliable.
+
+## Explore the study
+
+| Page | You will find |
+|---|---|
+| 🚀 [00 · Quick start](docs/en/00-quick-start.md) | run the whole chain, connect Home Assistant, troubleshoot |
+| 🎯 [01 · Context and goals](docs/en/01-context-and-goals.md) | the question, why it is hard on small hardware |
+| 🏗️ [02 · Architecture](docs/en/02-architecture.md) | components, diagrams, the compact proxy and its guard-rails |
+| 🔬 [03 · Methods](docs/en/03-methods.md) | stock model, **LoRA**, **RAG**, compact prompt, web search |
+| 📊 [04 · Results](docs/en/04-results.md) | all measurements: speech-to-text, LLMs, text-to-speech, latency |
+| ⚖️ [05 · Pros and cons](docs/en/05-pros-and-cons.md) | local vs cloud, technique by technique |
+| 🧯 [06 · Lessons and limits](docs/en/06-lessons-and-limits.md) | incidents, pitfalls, what was not measured |
+| 🔁 [07 · Reproduce](docs/en/07-reproduce.md) | training, validation, switching to production |
+
+Result tables as CSV are in [`results/`](results/). Scripts are in [`scripts/`](scripts/) (comments mostly in French; paths and names anonymized).
 
 ## License
 

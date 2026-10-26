@@ -1,0 +1,61 @@
+# TinyLLM — démarrage rapide / quick start : toute la chaîne vocale locale sur une seule machine.
+#   docker compose up -d            (depuis ce dossier)
+#   docker compose exec ollama ollama pull qwen3:1.7b      (modèle brut pour essayer ; voir docs/en/00-quick-start.md)
+# Ports : Ollama 11434 · proxy compact 11436 (à donner à Home Assistant) · Whisper 10300 · Piper 10200 · SearXNG 127.0.0.1:8888
+services:
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    ports: ["11434:11434"]
+    volumes: ["ollama:/root/.ollama"]
+    environment:
+      - OLLAMA_MAX_LOADED_MODELS=1
+      - OLLAMA_NUM_PARALLEL=1
+
+  whisper:                      # reconnaissance vocale (STT), protocole Wyoming
+    image: rhasspy/wyoming-whisper:latest
+    restart: unless-stopped
+    command: ["--model", "small-int8", "--language", "fr", "--beam-size", "1",
+              "--initial-prompt", "Maison connectée. Allume, éteins, ferme, ouvre. Volets, lumière, salon, cuisine, chambre, bureau."]
+    ports: ["10300:10300"]
+    volumes: ["whisper:/data"]
+
+  piper:                        # synthèse vocale (TTS), protocole Wyoming
+    image: rhasspy/wyoming-piper:latest
+    restart: unless-stopped
+    command: ["--voice", "fr_FR-siwis-medium"]
+    ports: ["10200:10200"]
+    volumes: ["piper:/data"]
+
+  searxng:                      # recherche web privée (localhost uniquement)
+    image: searxng/searxng:latest
+    restart: unless-stopped
+    ports: ["127.0.0.1:8888:8080"]
+    volumes: ["./searxng-settings.yml:/etc/searxng/settings.yml:ro"]
+    mem_limit: 512m
+
+  proxy:                        # proxy compact : c'est CELUI-CI que Home Assistant doit appeler
+    image: python:3.11-slim
+    restart: unless-stopped
+    working_dir: /app
+    command: ["python", "compact_proxy.py", "--backend-model", "${LLM_MODEL:-qwen3:1.7b}", "--kind", "qwen", "--ctx", "4096", "--port", "11436"]
+    environment:
+      - PYTHONUNBUFFERED=1
+      - UPSTREAM=http://ollama:11434
+      - COMPACT_WEB=1
+      - SEARX_URL=http://searxng:8080
+      - WEB_LOG=/logs/web_queries.jsonl
+      - PROXY_LOG=/logs/compact_proxy.jsonl
+      - LOG_RETENTION_DAYS=7
+      - HOME_PLACE=${HOME_PLACE:-Paris}
+    volumes:
+      - "../scripts/proxy:/app:ro"
+      - "./logs:/logs"
+    ports: ["11436:11436"]
+    depends_on: [ollama, searxng]
+    mem_limit: 256m
+
+volumes:
+  ollama:
+  whisper:
+  piper:
