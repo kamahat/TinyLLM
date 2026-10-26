@@ -1,0 +1,847 @@
+[
+ {
+  "id": "001",
+  "cat": "lumiere",
+  "text": "Allume la lumière du salon",
+  "tool": "HassTurnOn",
+  "args": {
+   "name": "Lumière Salon"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "002",
+  "cat": "lumiere",
+  "text": "Éteins la lumière du salon",
+  "tool": "HassTurnOff",
+  "args": {
+   "name": "Lumière Salon"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "003",
+  "cat": "lumiere",
+  "text": "Peux-tu allumer la lumière du salon ?",
+  "tool": "HassTurnOn",
+  "args": {
+   "name": "Lumière Salon"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "004",
+  "cat": "lumiere",
+  "text": "Allume la lumière tapisserie",
+  "tool": "HassTurnOn",
+  "args": {
+   "name": "Lumière Tapisserie"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "005",
+  "cat": "lumiere",
+  "text": "Éteins la lumière tapisserie",
+  "tool": "HassTurnOff",
+  "args": {
+   "name": "Lumière Tapisserie"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "006",
+  "cat": "lumiere",
+  "text": "Mets la tapisserie en lumière",
+  "tool": "HassTurnOn",
+  "args": {
+   "name": "Lumière Tapisserie"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "007",
+  "cat": "lumiere",
+  "text": "Allume la lumière du bureau de Alex",
+  "tool": "HassTurnOn",
+  "args": {
+   "name": "Lumière Bureau Alex"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "008",
+  "cat": "lumiere",
+  "text": "Éteins la lumière du bureau de Alex",
+  "tool": "HassTurnOff",
+  "args": {
+   "name": "Lumière Bureau Alex"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "009",
+  "cat": "lumiere",
+  "text": "Éteins les lumières de la cuisine",
+  "tool": "HassTurnOff",
+  "args": {
+   "name": "Lumières Cuisines"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "010",
+  "cat": "lumiere",
+  "text": "Allume la cuisine",
+  "tool": "HassTurnOn",
+  "args": {
+   "name": "Lumières Cuisines"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "011",
+  "cat": "lumiere",
+  "text": "Allume la lumière du garage",
+  "tool": "HassTurnOn",
+  "args": {
+   "name": "Lumière garage"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "012",
+  "cat": "lumiere",
+  "text": "Éteins le garage",
+  "tool": "HassTurnOff",
+  "args": {
+   "name": "Lumière garage"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "013",
+  "cat": "lumiere",
+  "text": "Allume la lumière de la terrasse",
+  "tool": "HassTurnOn",
+  "args": {
+   "name": "Lumière Terrasse"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "014",
+  "cat": "lumiere",
+  "text": "Éteins la terrasse",
+  "tool": "HassTurnOff",
+  "args": {
+   "name": "Lumière Terrasse"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "015",
+  "cat": "lumiere",
+  "text": "Allume les lumières de la table du salon",
+  "tool": "HassTurnOn",
+  "args": {
+   "name": "Lumières salon table"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "016",
+  "cat": "lumiere",
+  "text": "Éteins la table du salon",
+  "tool": "HassTurnOff",
+  "args": {
+   "name": "Lumières salon table"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "017",
+  "cat": "lumiere",
+  "text": "Allume les lumières extérieures",
+  "tool": "HassTurnOn",
+  "args": {
+   "name": "Lumières extérieurs"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "018",
+  "cat": "lumiere",
+  "text": "Éteins les lumières extérieures",
+  "tool": "HassTurnOff",
+  "args": {
+   "name": "Lumières extérieurs"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "019",
+  "cat": "lumiere",
+  "text": "Mets la lumière du salon à 50 pour cent",
+  "tool": "HassLightSet",
+  "args": {
+   "name": "Lumière Salon",
+   "brightness": 50
+  },
+  "no_tool": false
+ },
+ {
+  "id": "020",
+  "cat": "lumiere",
+  "text": "Baisse la lumière de la cuisine à 30 pour cent",
+  "tool": "HassLightSet",
+  "args": {
+   "name": "Lumières Cuisines",
+   "brightness": 30
+  },
+  "no_tool": false
+ },
+ {
+  "id": "021",
+  "cat": "lumiere",
+  "text": "Allume toutes les lumières du salon",
+  "tool": "HassTurnOn",
+  "args": {
+   "area": "Salon",
+   "domain": "light"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "022",
+  "cat": "lumiere",
+  "text": "Éteins tout dans le salon",
+  "tool": "HassTurnOff",
+  "args": {
+   "area": "Salon"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "023",
+  "cat": "volets",
+  "text": "Ferme les volets du salon",
+  "tool": "HassTurnOff",
+  "args": {
+   "name": "Volets du salon"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "024",
+  "cat": "volets",
+  "text": "Ouvre les volets du salon",
+  "tool": "HassTurnOn",
+  "args": {
+   "name": "Volets du salon"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "025",
+  "cat": "volets",
+  "text": "Ferme les volets de la chambre d amis",
+  "tool": "HassTurnOff",
+  "args": {
+   "name": "Volets de la chambre d'amis"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "026",
+  "cat": "volets",
+  "text": "Ouvre les volets de la chambre d amis",
+  "tool": "HassTurnOn",
+  "args": {
+   "name": "Volets de la chambre d'amis"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "027",
+  "cat": "volets",
+  "text": "Ferme tous les volets",
+  "tool": "HassTurnOff",
+  "args": {
+   "name": "Tous les volets"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "028",
+  "cat": "volets",
+  "text": "Ouvre tous les volets",
+  "tool": "HassTurnOn",
+  "args": {
+   "name": "Tous les volets"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "029",
+  "cat": "volets",
+  "text": "Peux-tu fermer tous les volets ?",
+  "tool": "HassTurnOff",
+  "args": {
+   "name": "Tous les volets"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "030",
+  "cat": "volets",
+  "text": "Baisse l écran de projection",
+  "tool": "HassTurnOff",
+  "args": {
+   "name": "Écran de projection"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "031",
+  "cat": "volets",
+  "text": "Remonte l écran de projection",
+  "tool": "HassTurnOn",
+  "args": {
+   "name": "Écran de projection"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "032",
+  "cat": "volets",
+  "text": "Mets les volets du salon à moitié",
+  "tool": "HassSetPosition",
+  "args": {
+   "name": "Volets du salon",
+   "position": 50
+  },
+  "no_tool": false
+ },
+ {
+  "id": "033",
+  "cat": "volets",
+  "text": "Ouvre les volets du salon à 30 pour cent",
+  "tool": "HassSetPosition",
+  "args": {
+   "name": "Volets du salon",
+   "position": 30
+  },
+  "no_tool": false
+ },
+ {
+  "id": "034",
+  "cat": "volets",
+  "text": "Arrête les volets du salon",
+  "tool": "HassStopMoving",
+  "args": {
+   "name": "Volets du salon"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "035",
+  "cat": "scripts",
+  "text": "Allume le cinéma",
+  "tool": "cinema_on",
+  "args": {},
+  "no_tool": false
+ },
+ {
+  "id": "036",
+  "cat": "scripts",
+  "text": "Lance le cinéma",
+  "tool": "cinema_on",
+  "args": {},
+  "no_tool": false
+ },
+ {
+  "id": "037",
+  "cat": "scripts",
+  "text": "Mode cinéma",
+  "tool": "cinema_on",
+  "args": {},
+  "no_tool": false
+ },
+ {
+  "id": "038",
+  "cat": "scripts",
+  "text": "Éteins le cinéma",
+  "tool": "cinema_off",
+  "args": {},
+  "no_tool": false
+ },
+ {
+  "id": "039",
+  "cat": "scripts",
+  "text": "Arrête le cinéma",
+  "tool": "cinema_off",
+  "args": {},
+  "no_tool": false
+ },
+ {
+  "id": "040",
+  "cat": "scripts",
+  "text": "Fin du cinéma",
+  "tool": "cinema_off",
+  "args": {},
+  "no_tool": false
+ },
+ {
+  "id": "041",
+  "cat": "scripts",
+  "text": "Passe les volets en mode automatique",
+  "tool": "mode_automatique_volets",
+  "args": {},
+  "no_tool": false
+ },
+ {
+  "id": "042",
+  "cat": "scripts",
+  "text": "Active le mode automatique des volets",
+  "tool": "mode_automatique_volets",
+  "args": {},
+  "no_tool": false
+ },
+ {
+  "id": "043",
+  "cat": "scripts",
+  "text": "Remets les volets roulants en automatique",
+  "tool": "mode_automatique_volets",
+  "args": {},
+  "no_tool": false
+ },
+ {
+  "id": "044",
+  "cat": "scripts",
+  "text": "Vide la liste de courses",
+  "tool": "vide_liste_courses",
+  "args": {},
+  "no_tool": false
+ },
+ {
+  "id": "045",
+  "cat": "scripts",
+  "text": "Efface la liste de courses",
+  "tool": "vide_liste_courses",
+  "args": {},
+  "no_tool": false
+ },
+ {
+  "id": "046",
+  "cat": "scripts",
+  "text": "Nettoie la liste des courses",
+  "tool": "vide_liste_courses",
+  "args": {},
+  "no_tool": false
+ },
+ {
+  "id": "047",
+  "cat": "todo",
+  "text": "Ajoute du lait à la liste de courses",
+  "tool": "HassListAddItem",
+  "args": {
+   "item": "lait"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "048",
+  "cat": "todo",
+  "text": "Ajoute des œufs à la liste de courses",
+  "tool": "HassListAddItem",
+  "args": {
+   "item": "œufs"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "049",
+  "cat": "todo",
+  "text": "Mets du pain sur la liste de courses",
+  "tool": "HassListAddItem",
+  "args": {
+   "item": "pain"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "050",
+  "cat": "todo",
+  "text": "Retire le lait de la liste de courses",
+  "tool": "HassListRemoveItem",
+  "args": {
+   "item": "lait"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "051",
+  "cat": "todo",
+  "text": "Coche le pain sur la liste de courses",
+  "tool": "HassListCompleteItem",
+  "args": {
+   "item": "pain"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "052",
+  "cat": "todo",
+  "text": "Qu est-ce qu il y a sur la liste de courses ?",
+  "tool": "get_items",
+  "args": {},
+  "no_tool": false
+ },
+ {
+  "id": "053",
+  "cat": "todo",
+  "text": "Lis-moi la liste de courses",
+  "tool": "get_items",
+  "args": {},
+  "no_tool": false
+ },
+ {
+  "id": "054",
+  "cat": "clim",
+  "text": "Mets la clim du salon à 22 degrés",
+  "tool": "HassClimateSetTemperature",
+  "args": {
+   "name": "Climatisation Salon",
+   "temperature": 22
+  },
+  "no_tool": false
+ },
+ {
+  "id": "055",
+  "cat": "clim",
+  "text": "Règle la climatisation du salon sur 24",
+  "tool": "HassClimateSetTemperature",
+  "args": {
+   "name": "Climatisation Salon",
+   "temperature": 24
+  },
+  "no_tool": false
+ },
+ {
+  "id": "056",
+  "cat": "clim",
+  "text": "Allume la climatisation du salon",
+  "tool": "HassTurnOn",
+  "args": {
+   "name": "Climatisation Salon"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "057",
+  "cat": "clim",
+  "text": "Éteins la clim du salon",
+  "tool": "HassTurnOff",
+  "args": {
+   "name": "Climatisation Salon"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "058",
+  "cat": "info",
+  "text": "Quelle température fait-il dehors ?",
+  "tool": "GetLiveContext",
+  "args": {},
+  "no_tool": false
+ },
+ {
+  "id": "059",
+  "cat": "info",
+  "text": "Quelle est la température de la douche ?",
+  "tool": "GetLiveContext",
+  "args": {},
+  "no_tool": false
+ },
+ {
+  "id": "060",
+  "cat": "info",
+  "text": "Y a-t-il quelqu un à la maison ?",
+  "tool": "GetLiveContext",
+  "args": {},
+  "no_tool": false
+ },
+ {
+  "id": "061",
+  "cat": "info",
+  "text": "Quelle est la météo ?",
+  "tool": "GetLiveContext",
+  "args": {},
+  "no_tool": false
+ },
+ {
+  "id": "062",
+  "cat": "info",
+  "text": "Est-ce que la lumière du salon est allumée ?",
+  "tool": "GetLiveContext",
+  "args": {},
+  "no_tool": false
+ },
+ {
+  "id": "063",
+  "cat": "info",
+  "text": "Les volets du salon sont-ils ouverts ?",
+  "tool": "GetLiveContext",
+  "args": {},
+  "no_tool": false
+ },
+ {
+  "id": "064",
+  "cat": "info",
+  "text": "Est-ce que la cuisine est allumée ?",
+  "tool": "GetLiveContext",
+  "args": {},
+  "no_tool": false
+ },
+ {
+  "id": "065",
+  "cat": "info",
+  "text": "Quelle heure est-il ?",
+  "tool": "GetDateTime",
+  "args": {},
+  "no_tool": false
+ },
+ {
+  "id": "066",
+  "cat": "info",
+  "text": "Quel jour sommes-nous ?",
+  "tool": "GetDateTime",
+  "args": {},
+  "no_tool": false
+ },
+ {
+  "id": "067",
+  "cat": "general",
+  "text": "Quelle est la capitale de l Italie ?",
+  "tool": null,
+  "args": {},
+  "no_tool": true
+ },
+ {
+  "id": "068",
+  "cat": "general",
+  "text": "Combien font sept fois huit ?",
+  "tool": null,
+  "args": {},
+  "no_tool": true
+ },
+ {
+  "id": "069",
+  "cat": "general",
+  "text": "Raconte-moi une blague courte",
+  "tool": null,
+  "args": {},
+  "no_tool": true
+ },
+ {
+  "id": "070",
+  "cat": "general",
+  "text": "Qui a écrit Les Misérables ?",
+  "tool": null,
+  "args": {},
+  "no_tool": true
+ },
+ {
+  "id": "071",
+  "cat": "general",
+  "text": "Donne-moi une idée de dessert rapide",
+  "tool": null,
+  "args": {},
+  "no_tool": true
+ },
+ {
+  "id": "072",
+  "cat": "general",
+  "text": "Quelle est la plus haute montagne du monde ?",
+  "tool": null,
+  "args": {},
+  "no_tool": true
+ },
+ {
+  "id": "073",
+  "cat": "piege",
+  "text": "Allume le four",
+  "tool": null,
+  "args": {},
+  "no_tool": true
+ },
+ {
+  "id": "074",
+  "cat": "piege",
+  "text": "Ferme le portail",
+  "tool": null,
+  "args": {},
+  "no_tool": true
+ },
+ {
+  "id": "075",
+  "cat": "piege",
+  "text": "Éteins la télé du salon",
+  "tool": null,
+  "args": {},
+  "no_tool": true
+ },
+ {
+  "id": "076",
+  "cat": "piege",
+  "text": "Mets le chauffage de la chambre à 20 degrés",
+  "tool": null,
+  "args": {},
+  "no_tool": true
+ },
+ {
+  "id": "077",
+  "cat": "piege",
+  "text": "Ouvre la porte du garage",
+  "tool": null,
+  "args": {},
+  "no_tool": true
+ },
+ {
+  "id": "078",
+  "cat": "piege",
+  "text": "Allume la machine à café",
+  "tool": null,
+  "args": {},
+  "no_tool": true
+ },
+ {
+  "id": "079",
+  "cat": "piege",
+  "text": "Lance l aspirateur",
+  "tool": null,
+  "args": {},
+  "no_tool": true
+ },
+ {
+  "id": "080",
+  "cat": "piege",
+  "text": "Éteins la lumière de la salle de bain",
+  "tool": null,
+  "args": {},
+  "no_tool": true
+ },
+ {
+  "id": "081",
+  "cat": "piege",
+  "text": "Verrouille la porte d entrée",
+  "tool": null,
+  "args": {},
+  "no_tool": true
+ },
+ {
+  "id": "082",
+  "cat": "piege",
+  "text": "Mets de la musique dans le salon",
+  "tool": null,
+  "args": {},
+  "no_tool": true
+ },
+ {
+  "id": "083",
+  "cat": "bruit",
+  "text": "Fermes voler salon",
+  "tool": "HassTurnOff",
+  "args": {
+   "name": "Volets du salon"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "084",
+  "cat": "bruit",
+  "text": "Allume lumière bureau lionnelle",
+  "tool": "HassTurnOn",
+  "args": {
+   "name": "Lumière Bureau Alex"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "085",
+  "cat": "bruit",
+  "text": "Et un lumière tapisserie",
+  "tool": "HassTurnOn",
+  "args": {
+   "name": "Lumière Tapisserie"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "086",
+  "cat": "bruit",
+  "text": "Allume lumière tapisserie.",
+  "tool": "HassTurnOn",
+  "args": {
+   "name": "Lumière Tapisserie"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "087",
+  "cat": "bruit",
+  "text": "Passent les volets roulants en mode automatique.",
+  "tool": "mode_automatique_volets",
+  "args": {},
+  "no_tool": false
+ },
+ {
+  "id": "088",
+  "cat": "bruit",
+  "text": "Ferme les volets du salon.",
+  "tool": "HassTurnOff",
+  "args": {
+   "name": "Volets du salon"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "089",
+  "cat": "bruit",
+  "text": "Vite la liste de courses",
+  "tool": "vide_liste_courses",
+  "args": {},
+  "no_tool": false
+ },
+ {
+  "id": "090",
+  "cat": "bruit",
+  "text": "Éteins la lumière, tapisserie.",
+  "tool": "HassTurnOff",
+  "args": {
+   "name": "Lumière Tapisserie"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "091",
+  "cat": "bruit",
+  "text": "Allume la lumière du bureau lionnel",
+  "tool": "HassTurnOn",
+  "args": {
+   "name": "Lumière Bureau Alex"
+  },
+  "no_tool": false
+ },
+ {
+  "id": "092",
+  "cat": "bruit",
+  "text": "Ouvre les voleurs de la chambre d amis",
+  "tool": "HassTurnOn",
+  "args": {
+   "name": "Volets de la chambre d'amis"
+  },
+  "no_tool": false
+ }
+]

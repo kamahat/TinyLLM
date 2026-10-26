@@ -1,0 +1,9 @@
+config,model,vocab_prompt,condition,n,wer_pct,exact_sentences,latency_mean_s,latency_p90_s,rtf
+tiny-int8 + prompt,tiny-int8,True,clean,92,31.2,26,0.68,0.64,0.38
+tiny-int8 + prompt,tiny-int8,True,noisy_15dB,92,45.4,11,0.78,0.64,0.44
+base-int8 + prompt,base-int8,True,clean,92,16.0,41,1.41,1.5,0.79
+base-int8 + prompt,base-int8,True,noisy_15dB,92,24.4,26,1.59,1.5,0.89
+small-int8 + prompt (production),small-int8,True,clean,92,6.5,68,3.04,3.14,1.71
+small-int8 + prompt (production),small-int8,True,noisy_15dB,92,11.5,57,3.05,3.17,1.71
+small-int8 sans prompt,small-int8,False,clean,92,9.6,59,3.12,3.22,1.75
+small-int8 sans prompt,small-int8,False,noisy_15dB,92,13.5,49,3.09,3.21,1.73

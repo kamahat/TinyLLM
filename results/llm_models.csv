@@ -1,0 +1,8 @@
+model,no_history_ok,no_history_n,history_ok,history_n,adversarial_ok,adversarial_n,false_confirmations_after_error,latency_s,file_size_gb
+"Qwen3-1.7B v2 (framework prompt, ~3,000 tokens)",43,46,36,46,6,6,n/a (loops: 0),7.1,1.1
+"Qwen3-1.7B v3 (framework prompt, ~3,000 tokens)",43,46,39,46,6,6,n/a (loops: 0),7.8,1.1
+"Qwen3-1.7B v4c (compact, ~1,330 tokens)",44,46,42,46,6,6,0/33,5.0,1.1
+"CroissantLLM 1.3B v4c (HF tokenization, INVALID)",17,46,17,46,0,6,0/30,5.0,0.87
+CroissantLLM 1.3B v4d (llama.cpp tokenization),42,46,39,46,6,6,0/34,4.9,0.87
+Qwen3-1.7B v5 (compact + web) — in production,43,46,44,46,6,6,0/33,4.8,1.1
+Qwen3-0.6B v5 (compact + web),43,46,42,46,6,6,0/33,2.9,0.4

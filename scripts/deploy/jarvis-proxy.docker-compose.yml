@@ -1,0 +1,29 @@
+# Proxy COMPACT Jarvis : HA -> proxy (11436) -> Ollama (11434). Voir README.md (retour arriere, exploitation).
+services:
+  jarvis-proxy:
+    image: python:3.11-slim
+    container_name: jarvis-proxy
+    restart: unless-stopped
+    network_mode: host
+    working_dir: /app
+    volumes:
+      - ./app:/app:ro
+      - ./logs:/logs
+    environment:
+      - UPSTREAM=http://127.0.0.1:11434
+      - PROXY_LOG=/logs/compact_proxy.jsonl
+      - PYTHONUNBUFFERED=1
+      - COMPACT_WEB=1
+      - SEARX_URL=http://127.0.0.1:8888
+      - WEB_LOG=/logs/web_queries.jsonl
+      - LOG_RETENTION_DAYS=7
+    command: ["python", "compact_proxy.py", "--backend-model", "qwen3-ha-v5", "--kind", "qwen", "--ctx", "4096", "--port", "11436"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:11436/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    mem_limit: 256m
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}

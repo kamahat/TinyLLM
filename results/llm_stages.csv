@@ -1,0 +1,6 @@
+stage,ok,n,latency_s,prompt_tokens
+Stock Qwen3-1.7B (Q4_K_M),17,92,5.8,2540
+"v1 LoRA, full prompt",88,92,7.2,2537
+v1 LoRA + RAG in the user message (31 phrases),26,31,7.5,1896
+"v1, exact framework request",86,92,6.9,2528
+"v2, exact framework request",87,92,7.1,2528
