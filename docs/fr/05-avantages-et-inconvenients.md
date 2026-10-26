@@ -30,7 +30,7 @@
 
 ## À quoi sert chaque couche
 
-- Le **STT** décide de ce que le système entend. Whisper `small` est nettement plus précis que `tiny`/`base`, et un court **prompt de vocabulaire** (une phrase de mots du domaine) aide sensiblement ([04](04-resultats.md)).
+- Le **STT** décide de ce que le système entend, et c'est la **plus grosse latence fixe** (~3 s avec Whisper `small`). Whisper `small` est nettement plus précis que `tiny`/`base`, et un court **prompt de vocabulaire** aide. Un moteur **en streaming** répond en ~0,1 s après la fin de la parole, avec un taux d'erreur de mots plus élevé mais presque la même part de commandes correctes (sur de la parole synthétique) — [04](04-resultats.md).
 - Le **LLM** décide de ce qu'il faut faire. L'affinage est ce qui rend un tout petit modèle fiable sur cette tâche unique.
 - Les **garde-fous et le proxy** décident de ce qui a le *droit* d'arriver et de ce qui est répondu.
 - Le **TTS** est la partie la moins chère : Piper synthétise une phrase en environ 0,2 s sur ce CPU.

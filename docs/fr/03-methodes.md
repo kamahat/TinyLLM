@@ -61,6 +61,15 @@ Un outil `web_search` exécuté par le proxy contre une instance SearXNG locale.
 - **CroissantLLM 1,3B** (architecture Llama centrée sur le français, contexte de 2 048 tokens) : entraîné avec la même recette. La première version a obtenu 37 % parce qu'elle avait été entraînée avec un **tokenizer** (HF) différent de celui de l'inférence (llama.cpp) : la clé JSON `arguments` devenait `a`. Un réentraînement avec la tokenisation de llama.cpp l'a corrigé.
 - **Qwen3-0.6B** : mêmes données et même recette que le 1,7B, pour mesurer le compromis vitesse/qualité.
 
+## 7. Moteurs de reconnaissance vocale
+
+Whisper (faster-whisper, int8) était le premier choix. Sa mesure a montré un **coût fixe d'environ 3 s par phrase** sur ce CPU, quelle que soit la durée de la parole, parce que faster-whisper complète chaque phrase à une fenêtre de 30 secondes. Deux moteurs dont le coût suit la durée de l'audio ont alors été comparés via la même interface Wyoming (l'image du conteneur Whisper sait lancer d'autres moteurs) :
+
+- **Parakeet TDT 0,6B v3** (multilingue, int8, via sherpa-onnx) : 641 Mo, sans streaming.
+- **Zipformer en streaming pour le français (Kroko, via sherpa-onnx)** : 68 Mo, transcrit *pendant* que vous parlez.
+
+Ils ont été évalués sur le **taux d'erreur de mots** et — surtout — **de bout en bout** : la transcription de chaque moteur des phrases du banc est rejouée dans le LLM de production, car une erreur de transcription ne compte que si elle change l'action ([04](04-resultats.md)).
+
 ## Comment fonctionne le banc
 
 - **92 phrases en français** (data/benchmark_fr_92.json) : lumières, volets, clim, scripts, listes, informations, culture générale, **pièges** (appareils inexistants), **transcriptions bruitées**, et cas **adverses** (capteurs indisponibles).

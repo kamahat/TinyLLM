@@ -32,6 +32,7 @@ En coulisses, un petit **proxy** garde l'IA rapide et sûre (prompt réduit, con
 |---|---|---|
 | 🧠 **Comprendre les commandes** | part d'actions correctes sur 92 phrases de test en français | **93–96 %** (contre 18 % sans affinage) |
 | 🎙️ **Vous entendre** | taux d'erreur de mots de Whisper | **6,5 %** (modèle `small`) |
+| ⚡ **Des oreilles plus rapides** | un moteur vocal *en streaming* contre Whisper (parole synthétique) | **0,12 s** au lieu de 3 s après la fin de la parole, part de commandes correctes comparable |
 | 🔊 **Parler** | temps pour préparer une réponse | **~0,2 s** |
 | ⏱️ **Vitesse** | chaîne complète, à chaud | phrase simple **~3 s** · commande **~9–10 s** · question web **~20 s** |
 

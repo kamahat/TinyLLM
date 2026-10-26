@@ -13,6 +13,8 @@
 | SearXNG | inference host | Private meta-search engine, listening on localhost only |
 | GPU machine | separate VM | **Training only** (one RTX 5070, 12 GB). It can stay powered off: production never depends on it |
 
+The Whisper container image can also run other speech back-ends through the same Wyoming interface; two alternatives are compared in [04](04-results.md).
+
 The inference host is a small x86 mini-PC (Intel Core i3-6100T, 4 vCPU, ~7 GB RAM for the VM, no GPU).
 
 ```mermaid

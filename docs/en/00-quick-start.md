@@ -86,6 +86,10 @@ Validate **before** trusting it: no regression on the benchmark, zero loops, zer
 
 The scripts of the study live in `scripts/stt_tts/` (Wyoming client, a corpus generator that uses your Piper, and a Whisper benchmark). They are **research scripts**: they use absolute paths under `/opt/tinyllm` and the benchmark starts temporary containers over SSH, so edit the constants at the top before running them (`PIPER_HOST`, `PIPER_PORT`, the data path). Compare your numbers with [04 — Results](04-results.md): on our reference machine Whisper `small` needs ~3 s per utterance and Piper ~0.2 s.
 
+## Optional: faster speech recognition
+
+Whisper `small` costs ~3 s per utterance on a CPU. A **streaming** engine answers ~0.1 s after you stop speaking, with a higher word error rate but nearly the same share of correct commands in our (synthetic-speech) tests. In `docker-compose.yml`, replace the `whisper` service's `command` with the commented alternative (`--stt-library sherpa --sherpa-streaming … kroko …`), then `docker compose up -d whisper`. **Test it with your own voice first** — see [04 — Results](04-results.md).
+
 ## Troubleshooting
 
 | Symptom | Likely cause | What to do |

@@ -86,6 +86,10 @@ Validez **avant** de lui faire confiance : pas de régression sur le banc, zéro
 
 Les scripts de l'étude sont dans `scripts/stt_tts/` (client Wyoming, générateur de corpus utilisant votre Piper, banc Whisper). Ce sont des **scripts de recherche** : ils utilisent des chemins absolus sous `/opt/tinyllm` et le banc lance des conteneurs temporaires par SSH ; modifiez les constantes en tête de fichier avant de les lancer (`PIPER_HOST`, `PIPER_PORT`, chemin des données). Comparez vos chiffres avec les [résultats](04-resultats.md) : sur notre machine de référence, Whisper `small` met ~3 s par phrase et Piper ~0,2 s.
 
+## Optionnel : une reconnaissance vocale plus rapide
+
+Whisper `small` coûte ~3 s par phrase sur un CPU. Un moteur **en streaming** répond ~0,1 s après la fin de la parole, avec un taux d'erreur de mots plus élevé mais presque la même part de commandes correctes dans nos tests (parole synthétique). Dans `docker-compose.yml`, remplacez la `command` du service `whisper` par l'alternative commentée (`--stt-library sherpa --sherpa-streaming … kroko …`), puis `docker compose up -d whisper`. **Testez-le d'abord avec votre propre voix** — voir les [résultats](04-resultats.md).
+
 ## Dépannage
 
 | Symptôme | Cause probable | Que faire |

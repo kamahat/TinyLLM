@@ -61,6 +61,15 @@ A `web_search` tool executed by the proxy against a local SearXNG instance. Desi
 - **CroissantLLM 1.3B** (French-centric Llama architecture, 2,048-token context): trained with the same recipe. The first version scored 37 % because it was trained with a different **tokenizer** (HF) than the one used at inference (llama.cpp): the JSON key `arguments` became `a`. Retraining with llama.cpp's tokenization fixed it.
 - **Qwen3-0.6B**: same data and recipe as the 1.7B, to measure the speed/quality trade-off.
 
+## 7. Speech-to-text engines
+
+Whisper (faster-whisper, int8) was the first choice. Measuring it showed a **fixed ~3 s per utterance** on this CPU, whatever the length of the speech, because faster-whisper pads every utterance to a 30-second window. Two engines whose cost follows the audio length were then compared through the same Wyoming interface (the Whisper container image can run other back-ends):
+
+- **Parakeet TDT 0.6B v3** (multilingual, int8, via sherpa-onnx): 641 MB, non-streaming.
+- **Streaming Zipformer for French (Kroko, via sherpa-onnx)**: 68 MB, transcribes *while* you speak.
+
+They were evaluated both on the **word error rate** and — more importantly — **end to end**: each engine's transcript of the benchmark phrases is replayed through the production LLM, because a transcription error only matters if it changes the action ([04](04-results.md)).
+
 ## How the benchmark works
 
 - **92 French phrases** (data/benchmark_fr_92.json): lights, shutters, climate, scripts, lists, information, general knowledge, **traps** (non-existent devices), **noisy transcriptions**, and **adversarial** cases (sensors that are unavailable).

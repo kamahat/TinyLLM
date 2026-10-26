@@ -11,6 +11,7 @@
 | A spoken "passes" (with an s) not recognized | Speech recognition conjugates differently from the trigger sentences; a fallback LLM without tools **claimed** it had acted | An LLM without tools must never be able to claim an action; tolerant trigger phrases |
 | Latency of 25–37 s on some phrases | A sliding history discarded the LLM's prompt cache; removing the tools on turn 2 did too | Text-only short history; keep the prompt prefix stable |
 | 37 % score for the French-centric model | Training tokenizer ≠ inference tokenizer (`arguments` became `a`) | Train with the inference engine's tokenization |
+| Speech-to-text stuck at ~3 s whatever the sentence | faster-whisper pads every utterance to a 30-second window: a **fixed** cost per utterance | Compare engines whose cost follows the audio length (streaming); measure the **end-to-end** effect, not only the word error rate |
 | Invented values ("0 degrees") on an unavailable sensor | State never seen during training | Render it as "unavailable" **and** add a deterministic guard-rail |
 | "3,100 km", then "31,000 km" for a city pair | Web snippets without a figure; a postal code was read as a distance | Every number **with its unit** must appear in the snippets |
 
@@ -33,6 +34,7 @@
 
 ## Open leads
 
+- **Faster speech-to-text**: a streaming engine cuts ~2.9 s from every command at similar end-to-end accuracy on synthetic speech. Test it with **real voices** (live A/B against Whisper `small`) before adopting it; then train the LLM on that engine's typical errors.
 - A **GPU on the inference host** would make a 4B–8B model as fast as today's 1.7B.
 - Enrich the 0.6B training data with confirmation sentences (2–3 epochs) and measure on more real web queries.
 - Ollama recently added a speech model (**Phonon**, text-to-speech): macOS first, Windows/Linux announced. Worth testing against Piper when Linux is supported (French support and CPU speed unknown).

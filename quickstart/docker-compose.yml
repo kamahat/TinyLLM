@@ -17,6 +17,9 @@ services:
     restart: unless-stopped
     command: ["--model", "small-int8", "--language", "fr", "--beam-size", "1",
               "--initial-prompt", "Maison connectée. Allume, éteins, ferme, ouvre. Volets, lumière, salon, cuisine, chambre, bureau."]
+    # Optionnel / optional : moteur STT en streaming (~0,1 s apres la fin de la parole au lieu de ~3 s ; a tester avec de vraies voix).
+    # Remplacer la ligne `command` ci-dessus par :
+    #   command: ["--stt-library", "sherpa", "--sherpa-streaming", "--language", "fr", "--model", "sherpa-onnx-streaming-zipformer-fr-kroko-2025-08-06"]
     ports: ["10300:10300"]
     volumes: ["whisper:/data"]
 

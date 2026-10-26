@@ -30,7 +30,7 @@
 
 ## What each layer is *for*
 
-- **STT** decides what the system hears. Whisper `small` is clearly more accurate than `tiny`/`base`, and a short **vocabulary prompt** (a sentence of domain words) helps noticeably ([04](04-results.md)).
+- **STT** decides what the system hears, and is the **biggest fixed latency** (~3 s with Whisper `small`). Whisper `small` is clearly more accurate than `tiny`/`base`, and a short **vocabulary prompt** helps. A **streaming** engine answers in ~0.1 s after you stop speaking with a higher word error rate but nearly the same share of correct commands (on synthetic speech) — [04](04-results.md).
 - **The LLM** decides what to do. Fine-tuning is what makes a tiny model reliable at this single task.
 - **Guard-rails and the proxy** decide what is *allowed* to happen and what is said back.
 - **TTS** is the cheapest part: Piper synthesizes a sentence in about 0.2 s on this CPU.

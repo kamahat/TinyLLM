@@ -1,0 +1,7 @@
+engine,wer_clean_pct,wer_noisy_pct,exact_clean,exact_noisy,latency_after_speech_s,latency_p90_s,rtf,e2e_clean_ok,e2e_clean_n,e2e_noisy_ok,e2e_noisy_n
+Whisper tiny-int8 + vocabulary prompt,31.2,45.4,26,11,0.68,0.64,0.38,35,46,,
+Whisper base-int8 + vocabulary prompt,16.0,24.4,41,26,1.41,1.5,0.79,40,46,,
+Whisper small-int8 + vocabulary prompt (production),6.5,11.5,68,57,3.04,3.14,1.71,44,46,43,46
+"Whisper small-int8, no prompt",9.6,13.5,59,49,3.12,3.22,1.75,,,,
+"Parakeet TDT 0.6B v3, int8 (sherpa-onnx)",9.2,9.0,58,56,0.39,0.47,0.22,42,46,42,46
+"Streaming Zipformer FR, Kroko (sherpa-onnx)",11.7,12.3,53,54,0.12,0.2,0.07,43,46,43,46

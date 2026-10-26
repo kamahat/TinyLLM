@@ -7,13 +7,13 @@ D = "/opt/tinyllm/data/"
 ap = argparse.ArgumentParser()
 ap.add_argument("--host", default="http://localhost:11434"); ap.add_argument("--model", required=True); ap.add_argument("--kind", required=True); ap.add_argument("--out", required=True)
 ap.add_argument("--ctx", type=int, default=4096); ap.add_argument("--every", type=int, default=1); ap.add_argument("--cats", default=""); ap.add_argument("--hist", default="none")
-ap.add_argument("--force-error", action="store_true"); ap.add_argument("--adv", action="store_true"); ap.add_argument("--real", default=D + "ha_tablet_prompt.json")
-a = ap.parse_args(); REAL = json.load(open(a.real)); SYSTEM = REAL["system"]; TOOLS = REAL["tools"]
+ap.add_argument("--force-error", action="store_true"); ap.add_argument("--adv", action="store_true"); ap.add_argument("--real", default=D + "ha_tablet_prompt.json"); ap.add_argument("--recette", default=D + "benchmark_fr_92.json")
+a = ap.parse_args(); R = json.load(open(a.recette)); REAL = json.load(open(a.real)); SYSTEM = REAL["system"]; TOOLS = REAL["tools"]
 def norm(s):
     s = unicodedata.normalize("NFD", str(s).lower()); s = "".join(c for c in s if unicodedata.category(c) != "Mn"); return " ".join(re.sub(r"[^a-z0-9 ]+", " ", s).split())
 PRE = {"HassTurnOn": "intent__", "HassTurnOff": "intent__", "HassSetPosition": "intent__", "HassStopMoving": "intent__", "HassLightSet": "light__", "GetLiveContext": "homeassistant__", "GetDateTime": "llm__", "HassClimateSetTemperature": "climate__", "get_items": "todo__", "HassListAddItem": "todo__", "HassListCompleteItem": "todo__", "HassListRemoveItem": "todo__"}
 real = lambda t: None if t is None else PRE.get(t, "script__") + t
-R = json.load(open(D + "recette.json"))
+pass  # R charge plus haut (--recette)
 ADV = [("Allume la led Opale blanche", "HassTurnOn", {"name": "led Opale blanche"}), ("Éteins la lumière de la piscine", "HassTurnOff", {"name": "Lumiere Piscine"}), ("Allume la lumière de la piscine", "HassTurnOn", {"name": "Lumiere Piscine"}),
        ("Allume la led blanche du salon", "HassTurnOn", {"name": "led Opale blanche"}), ("Mets la lampe Opale", "HassTurnOn", {"name": "led Opale blanche"}), ("Éteins la piscine", "HassTurnOff", {"name": "Lumiere Piscine"})]
 if a.adv: R = [{"id": "9%02d" % i, "cat": "adv", "text": t, "tool": tl, "args": ar, "no_tool": False} for i, (t, tl, ar) in enumerate(ADV)]

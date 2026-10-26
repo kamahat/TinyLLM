@@ -22,7 +22,7 @@ async def synth(host, port, text, timeout=120):
     return bytes(pcm), rate, first or 0.0, time.time() - t0
 
 
-async def transcribe(host, port, pcm16k, lang="fr", timeout=300):
+async def transcribe(host, port, pcm16k, lang="fr", timeout=300, pace=0.0):
     """pcm int16 mono 16 kHz -> (texte, latence apres la fin de la parole, temps total)"""
     t0 = time.time()
     async with AsyncTcpClient(host, port) as c:
@@ -31,6 +31,7 @@ async def transcribe(host, port, pcm16k, lang="fr", timeout=300):
         step = 2048
         for i in range(0, len(pcm16k), step):
             await c.write_event(AudioChunk(rate=16000, width=2, channels=1, audio=pcm16k[i:i + step]).event())
+            if pace: await asyncio.sleep(pace)
         await c.write_event(AudioStop().event()); t1 = time.time()
         while True:
             ev = await asyncio.wait_for(c.read_event(), timeout)

@@ -13,6 +13,8 @@
 | SearXNG | hôte d'inférence | Méta-moteur de recherche privé, à l'écoute sur localhost uniquement |
 | Machine GPU | VM séparée | **Entraînement uniquement** (une RTX 5070, 12 Go). Elle peut rester éteinte : la production n'en dépend jamais |
 
+L'image du conteneur Whisper sait aussi lancer d'autres moteurs vocaux via la même interface Wyoming ; deux alternatives sont comparées en [04](04-resultats.md).
+
 L'hôte d'inférence est un petit mini-PC x86 (Intel Core i3-6100T, 4 vCPU, ~7 Go de RAM pour la VM, sans GPU).
 
 ```mermaid

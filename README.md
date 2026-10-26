@@ -32,6 +32,7 @@ Behind the scenes a small **proxy** keeps the AI fast and safe (smaller prompt, 
 |---|---|---|
 | 🧠 **Understanding commands** | share of correct actions on 92 French test phrases | **93–96 %** (vs 18 % without fine-tuning) |
 | 🎙️ **Hearing you** | Whisper word error rate | **6.5 %** (`small` model) |
+| ⚡ **Faster ears** | a *streaming* speech engine vs Whisper (synthetic speech) | **0.12 s** instead of 3 s after you stop speaking, similar share of correct commands |
 | 🔊 **Speaking** | time to prepare a reply | **~0.2 s** |
 | ⏱️ **Speed** | whole chain, warm | simple phrase **~3 s** · command **~9–10 s** · web question **~20 s** |
 

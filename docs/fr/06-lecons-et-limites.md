@@ -11,6 +11,7 @@
 | Un « passes » (avec un s) prononcé et non reconnu | La reconnaissance vocale conjugue autrement que les phrases déclencheuses ; un LLM de repli sans outils **affirmait** avoir agi | Un LLM sans outils ne doit jamais pouvoir affirmer une action ; phrases déclencheuses tolérantes |
 | Latence de 25 à 37 s sur certaines phrases | Un historique glissant jetait le cache de prompt du LLM ; retirer les outils au tour 2 aussi | Historique court en texte seul ; garder le préfixe du prompt stable |
 | 37 % pour le modèle centré sur le français | Tokenizer d'entraînement ≠ tokenizer d'inférence (`arguments` devenait `a`) | Entraîner avec la tokenisation du moteur d'inférence |
+| Reconnaissance vocale bloquée à ~3 s quelle que soit la phrase | faster-whisper complète chaque phrase à une fenêtre de 30 secondes : un coût **fixe** par phrase | Comparer des moteurs dont le coût suit la durée de l'audio (streaming) ; mesurer l'effet **de bout en bout**, pas seulement le taux d'erreur de mots |
 | Valeurs inventées (« 0 degré ») sur un capteur indisponible | État jamais vu à l'entraînement | Le rendre « indisponible » **et** ajouter un garde-fou déterministe |
 | « 3 100 km », puis « 31 000 km » pour une paire de villes | Extraits web sans chiffre ; un code postal lu comme une distance | Chaque nombre **avec son unité** doit figurer dans les extraits |
 
@@ -33,6 +34,7 @@
 
 ## Pistes ouvertes
 
+- **Reconnaissance vocale plus rapide** : un moteur en streaming retire ~2,9 s de chaque commande pour une justesse de bout en bout comparable sur de la parole synthétique. À tester avec de **vraies voix** (A/B en direct contre Whisper `small`) avant adoption ; puis entraîner le LLM sur les erreurs typiques de ce moteur.
 - Un **GPU sur l'hôte d'inférence** rendrait un modèle de 4 à 8 Md aussi rapide que le 1,7 Md actuel.
 - Enrichir les données d'entraînement du 0,6B avec des phrases de confirmation (2 à 3 époques) et mesurer sur davantage de requêtes web réelles.
 - Ollama a récemment ajouté un modèle vocal (**Phonon**, synthèse vocale) : macOS d'abord, Windows/Linux annoncés. À tester contre Piper quand Linux sera supporté (prise en charge du français et vitesse sur CPU inconnues).

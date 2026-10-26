@@ -4,22 +4,26 @@ Matériel : Intel Core i3-6100T (4 threads, AVX2), ~7 Go de RAM, **sans GPU** ; 
 
 > **Lire d'abord les limites** ([06](06-lecons-et-limites.md)) : une seule machine, le français uniquement, un banc de petite taille et de la **parole synthétique** pour la reconnaissance vocale.
 
-## 1. Reconnaissance vocale (Whisper, faster-whisper, int8, CPU)
+## 1. Reconnaissance vocale (Whisper, et deux moteurs alternatifs)
 
-92 ordres parlés synthétisés avec Piper (propre), et le même audio avec un bruit blanc ajouté à 15 dB de rapport signal/bruit. `WER` = taux d'erreur de mots ; latence = temps entre la fin de la parole et la transcription.
+92 ordres parlés synthétisés avec Piper (propre) et le même audio avec un bruit blanc ajouté à 15 dB de rapport signal/bruit. `WER` = taux d'erreur de mots. Latence = temps entre la fin de la parole et la transcription (le moteur en streaming reçoit l'audio à la cadence du temps réel, comme depuis un micro). La dernière colonne rejoue 46 phrases du banc dans le LLM de production en utilisant le texte **transcrit** au lieu du texte exact (référence avec le texte exact : 43/46, 93 %).
 
-| Configuration Whisper | WER, audio propre | Phrases exactes (sur 92) | WER, audio bruité (15 dB) | Phrases exactes (sur 92) | Latence après la fin de la parole | Facteur temps réel |
-|---|---|---|---|---|---|---|
-| tiny-int8 + prompt de vocabulaire | 31,2 % | 26 | 45,4 % | 11 | 0,68 s | 0,38 |
-| base-int8 + prompt de vocabulaire | 16,0 % | 41 | 24,4 % | 26 | 1,41 s | 0,79 |
-| **small-int8 + prompt de vocabulaire (production)** | 6,5 % | 68 | 11,5 % | 57 | 3,04 s | 1,71 |
-| small-int8, sans prompt | 9,6 % | 59 | 13,5 % | 49 | 3,12 s | 1,75 |
+| Moteur STT | WER, audio propre | WER, audio bruité (15 dB) | Latence après la fin de la parole | Facteur temps réel | Commandes correctes de bout en bout, propre / bruité |
+|---|---|---|---|---|---|
+| Whisper tiny-int8 + prompt de vocabulaire | 31,2 % | 45,4 % | 0,68 s | 0,38 | 35/46 (76 %) / – |
+| Whisper base-int8 + prompt de vocabulaire | 16,0 % | 24,4 % | 1,41 s | 0,79 | 40/46 (87 %) / – |
+| **Whisper small-int8 + prompt de vocabulaire (production)** | 6,5 % | 11,5 % | 3,04 s | 1,71 | 44/46 (96 %) / 43/46 (93 %) |
+| Whisper small-int8, sans prompt | 9,6 % | 13,5 % | 3,12 s | 1,75 | – / – |
+| Parakeet TDT 0,6B v3, int8 (sherpa-onnx) | 9,2 % | 9,0 % | 0,39 s | 0,22 | 42/46 (91 %) / 42/46 (91 %) |
+| **Zipformer FR en streaming, Kroko (sherpa-onnx)** | 11,7 % | 12,3 % | 0,12 s | 0,07 | 43/46 (93 %) / 43/46 (93 %) |
 
 **Constats**
-- **Whisper `small` est la seule taille utilisable** pour des commandes : 6,5 % de WER sur audio propre contre 16 % (`base`) et 31 % (`tiny`). Un mot mal entendu fait en général échouer la commande.
-- Le **prompt de vocabulaire** (une phrase de mots du domaine : « Maison connectée. Allume, éteins, ferme, ouvre. Volets, lumière, salon… ») fait passer le WER de `small` de 9,6 % à 6,5 % (propre) et de 13,5 % à 11,5 % (bruité), et les phrases exactes de 59 à 68 sur 92. Il ne coûte rien.
-- **La vitesse est le prix** : `small` met **~3 s** pour une phrase de ~1,8 s (facteur temps réel 1,7). C'est le **plus gros coût fixe** de toute la chaîne sur ce CPU. `tiny` et `base` répondent en 0,7 s et 1,4 s mais ne sont pas assez précis.
-- Un bruit à 15 dB multiplie le WER par 1,4 à 1,8 pour toutes les tailles ; le classement relatif ne change pas.
+- **La latence de Whisper est un coût fixe.** Elle reste autour de 3 s (écart-type 0,1 s) quelle que soit la durée de la phrase (0,9 à 2,8 s), parce que faster-whisper complète chaque phrase à une **fenêtre de 30 secondes** avant l'encodage. Sur ce CPU, `small` met donc ~3 s même pour une commande d'un mot. Les plus petits modèles Whisper sont plus rapides mais pas assez précis (31 % et 16 % de WER).
+- **Les moteurs dont le coût suit la durée de l'audio sont bien plus rapides.** Parakeet TDT 0,6B v3 répond en **0,39 s** ; un modèle **en streaming** (Zipformer Kroko, français, seulement 68 Mo) répond **0,12 s après la fin de la parole**, car il transcrit *pendant* que vous parlez.
+- **Le taux d'erreur de mots est plus élevé, mais les commandes passent.** Le WER passe de 6,5 % (Whisper small + prompt) à 9,2 % et 11,7 %, pourtant la part de *commandes* correctes reste à une à trois phrases de Whisper small (91–93 % contre 93–96 % ; des écarts de cette taille relèvent du bruit sur 46 phrases). Le LLM a été entraîné avec du bruit de transcription et Home Assistant associe les noms d'appareils de façon souple.
+- **Moins sensible au bruit** : Parakeet (9,2 → 9,0 %) et le modèle en streaming (11,7 → 12,3 %) bougent à peine à 15 dB, alors que Whisper small passe de 6,5 à 11,5 %.
+- Le **prompt de vocabulaire** aide Whisper `small` (WER 9,6 → 6,5 %, phrases exactes 59 → 68 sur 92) et ne coûte rien ; les moteurs alternatifs n'ont pas d'équivalent.
+- **Réserve : c'est de la parole synthétique.** De vrais micros, accents et pièces peuvent pénaliser les nouveaux moteurs plus que Whisper, entraîné sur une énorme quantité de parole réelle. Un **test A/B en direct avec de vraies voix** est la suite indispensable avant de remplacer Whisper.
 
 ## 2. Synthèse vocale (Piper, `fr_FR-siwis-medium`)
 
@@ -98,5 +102,6 @@ Des extraits plus courts vont plus vite mais sont nettement moins justes : non r
 | Ordre domotique via le LLM | ~3,0 s | ~4,8 s au premier appel, +1 à 2 s au second tour (estimation) | ~0,2 s | **~9–10 s** |
 | Question répondue depuis le web | ~3,0 s | 16,5–23 s | ~0,3 s | **~20–26 s** |
 | Première requête après un redémarrage (cache froid) | | + ~33–35 s | | ajouter ~35 s ; préchauffer après chaque redémarrage |
+| **Avec le moteur STT en streaming au lieu de Whisper small** | ~0,1 s | inchangé | inchangé | phrase simple **~0,4 s**, commande **~6–7 s**, web **~17–23 s** |
 
 Le prompt natif du framework (3 000 tokens) prenait **63 à 70 s** à traiter à froid, ce qui a d'abord fait croire que l'assistant était « mort » avant le prompt compact et le préchauffage.
