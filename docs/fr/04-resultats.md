@@ -66,6 +66,8 @@ Banc au prompt de la tablette (46 phrases ; avec historique = tours précédents
 | Qwen3-1.7B v5 (compact + web) | Q2_K | 8/46 (17 %) | 9/46 (20 %) | 24/38 | 0/6 (0 %) | n/a (boucles : 0) | 6,1 s | 0,78 Go |
 | Qwen3-1.7B v5 (compact + web) | Q2_K (imatrix) | 37/46 (80 %) | 31/46 (67 %) | 1/38 | 5/6 (83 %) | 0/33 | 4,5 s | 0,78 Go |
 | Qwen3-0.6B v5 (compact + web) | Q8_0 | 43/46 (93 %) | 42/46 (91 %) | 1/38 | 6/6 (100 %) | 0/33 | 3,3 s | 0,64 Go |
+| Qwen3-1.7B v5 (compact + web) | Q4_K_M (imatrix) | 45/46 (98 %) | 43/46 (93 %) | 1/38 | 6/6 (100 %) | 0/33 | 4,9 s | 1,1 Go |
+| Qwen3-1.7B v5 (compact + web) | IQ4_XS (imatrix) | 44/46 (96 %) | 42/46 (91 %) | 1/38 | 6/6 (100 %) | 0/33 | 4,9 s | 1,0 Go |
 
 **Constats**
 - Le **prompt compact + proxy** est le gain principal : le même Qwen3-1.7B passe de 93 %/85 % (prompt du framework, v3) à **96 %/91 %** (v4c), avec un prompt 2,3 fois plus petit et une réponse plus rapide (5,0 s au lieu de 7,8 s).
@@ -129,5 +131,22 @@ Chaque modèle affiné a été exporté en GGUF f16 puis quantifié avec llama.c
 - **La matrice d'importance répare l'essentiel** (17 % → 80 %, plus aucun format cassé) sans entraînement supplémentaire, ce qui donne une **borne basse** utile. Mais on reste 13 à 29 points sous le Q4_K_M, et avec historique **3 pièges sur 5 déclenchent un appel d'outil** : pas sûr pour un assistant vocal qui agit sur la maison.
 - **Plus petit n'est pas beaucoup plus rapide** : le fichier à 2 bits est 30 % plus léger, mais une commande prend 4,5 s au lieu de 4,8 s. Sur ce CPU, le traitement du prompt et la déquantification coûtent autant que la lecture des poids.
 - **Le 8 bits n'apporte rien** : sur le 0,6B, le Q8_0 a la même justesse que le Q4_K_M (93 % / 91 %), un fichier 60 % plus gros et une génération ~14 % plus lente : une **borne haute** sans bénéfice.
-- **Le Q4_K_M est le bon compromis** pour cette tâche : quasi sans perte, léger, rapide.
-- **Non mesuré** : Q3_K_M, Q5_K_M, Q6_K (attendus entre les deux bornes), quantifications IQ2/IQ3 (plus lentes sur CPU), un jeu de calibration plus grand, l'affinage conscient de la quantification.
+- **Le 4 bits est le bon compromis** pour cette tâche (Q4_K_M, ou IQ4_XS : voir ci-dessous) : quasi sans perte, léger, rapide.
+- **Non mesuré** : Q3_K_M, Q5_K_M, Q6_K (attendus entre les deux bornes), quantifications IQ1/IQ2/IQ3, un jeu de calibration plus grand, l'affinage conscient de la quantification.
+
+### Formats 4 bits comparés : Q4_K_M, Q4_K_M + imatrix, IQ4_XS + imatrix
+
+Mêmes poids f16 (Qwen3-1,7B v5). Les deux variantes « imatrix » utilisent **la même** matrice d'importance (48 exemples de calibration) : le tableau sépare donc l'effet de la **calibration** (Q4_K_M contre Q4_K_M + imatrix) de l'effet du **format** (Q4_K_M + imatrix contre IQ4_XS + imatrix). Justesse : banc de 46 phrases. Vitesse : micro-banc avec le vrai prompt de 1 500 tokens, cache de prompt désactivé à chaque essai, 12 essais en blocs alternés, médianes.
+
+| Variante | Fichier | Commandes correctes, sans / avec historique | Erreur forcée | Pièges ayant déclenché un appel d'outil (sur 8) | Refus à tort après un succès (sans / avec historique) | Génération d'une commande | Web : requêtes réelles / latence | Traitement du prompt | Décodage |
+|---|---|---|---|---|---|---|---|---|---|
+| Q4_K_M (production) | 1 107 Mo | 93 % / 96 % | 32/34 | 0 | 2/35 · 5/36 | 4,8 s | 15/22 / 16,5 s | 44,9 tok/s | 6,9 tok/s |
+| Q4_K_M + imatrix | 1 107 Mo | **98 %** / 93 % | 33/34 | 0 | 2/37 · 3/35 | 4,9 s | 15/22 / 16,9 s | non mesuré (mêmes types de tenseurs) | non mesuré |
+| IQ4_XS + imatrix | **1 010 Mo** | 96 % / 91 % | 33/34 | 1 | **0/37 · 0/35** | 4,9 s | 16/22 / 16,3 s | **46,9 tok/s** | 7,1 tok/s |
+
+**Constats**
+- **Justesse : les trois variantes sont indiscernables** (93–98 % sans historique, 91–96 % avec) : l'écart est d'une à trois phrases sur 46, ce qui est du bruit pour une seule exécution.
+- **La matrice d'importance n'a pas d'effet net à 4 bits** (+1 phrase sans historique, −1 avec). Elle compte beaucoup plus à 2 bits, où elle était décisive (17 % → 80 %).
+- **L'IQ4_XS n'est pas plus lent sur ce CPU**, contrairement à ce qu'on attend d'ordinaire des quantifications à dictionnaire : **9 % plus léger**, traitement du prompt **+4 %**, décodage égal dans le bruit.
+- **Une phrase piège** (« Éteins la télé du salon ») fait appeler un outil par l'IQ4_XS sur un appareil inexistant ; le framework répond par une erreur sans toucher d'autre appareil (même comportement que le 0,6B). Les deux variantes Q4_K_M ne le font pas.
+- **Verdict** : l'IQ4_XS peut remplacer le Q4_K_M sans réserve : un peu plus léger et plus rapide, même justesse. Le gain est faible (environ 100 Mo et ~1,5 s sur un prompt froid de 1 500 tokens) : **cela ne justifie pas à lui seul de changer la production**.

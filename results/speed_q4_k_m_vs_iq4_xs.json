@@ -1,0 +1,90 @@
+{
+ "qwen3-ha-v5-q4km": [
+  {
+   "prefill_tok": 1505,
+   "prefill_s": 33.644059999,
+   "gen_tok": 27,
+   "gen_s": 3.949025,
+   "total_s": 42.21094870567322
+  },
+  {
+   "prefill_tok": 1503,
+   "prefill_s": 33.520497,
+   "gen_tok": 27,
+   "gen_s": 3.848209,
+   "total_s": 41.538214445114136
+  },
+  {
+   "prefill_tok": 1506,
+   "prefill_s": 33.480235999,
+   "gen_tok": 27,
+   "gen_s": 3.63297,
+   "total_s": 41.04598021507263
+  },
+  {
+   "prefill_tok": 1507,
+   "prefill_s": 33.443716999,
+   "gen_tok": 27,
+   "gen_s": 3.903078,
+   "total_s": 42.01297116279602
+  },
+  {
+   "prefill_tok": 1507,
+   "prefill_s": 33.575712,
+   "gen_tok": 27,
+   "gen_s": 4.161599,
+   "total_s": 41.91634559631348
+  },
+  {
+   "prefill_tok": 1507,
+   "prefill_s": 33.601508,
+   "gen_tok": 27,
+   "gen_s": 4.072585,
+   "total_s": 41.60303020477295
+  }
+ ],
+ "qwen3-ha-v5-iq4xs": [
+  {
+   "prefill_tok": 1505,
+   "prefill_s": 31.872084,
+   "gen_tok": 27,
+   "gen_s": 3.673423,
+   "total_s": 39.21263527870178
+  },
+  {
+   "prefill_tok": 1507,
+   "prefill_s": 32.188243,
+   "gen_tok": 27,
+   "gen_s": 3.700809,
+   "total_s": 38.80583477020264
+  },
+  {
+   "prefill_tok": 1505,
+   "prefill_s": 32.079851,
+   "gen_tok": 27,
+   "gen_s": 3.888983,
+   "total_s": 38.61161136627197
+  },
+  {
+   "prefill_tok": 1505,
+   "prefill_s": 31.754237,
+   "gen_tok": 27,
+   "gen_s": 3.770586,
+   "total_s": 38.420018911361694
+  },
+  {
+   "prefill_tok": 1506,
+   "prefill_s": 32.355498,
+   "gen_tok": 27,
+   "gen_s": 4.072483,
+   "total_s": 39.071879863739014
+  },
+  {
+   "prefill_tok": 1507,
+   "prefill_s": 32.12722,
+   "gen_tok": 27,
+   "gen_s": 3.860402,
+   "total_s": 38.879514932632446
+  }
+ ]
+}

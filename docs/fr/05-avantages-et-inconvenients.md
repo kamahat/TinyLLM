@@ -26,6 +26,7 @@
 | **Garde-fous déterministes** | Exacts, instantanés, testables ; corrigent des défauts qu'un entraînement supplémentaire ne corrige pas | Ils masquent les faiblesses du modèle au lieu de les supprimer ; chacun est un cas particulier | **Fortement recommandés** |
 | **Recherche web locale** | Privée, sans clé d'API | Moteurs à débit limité ; les extraits manquent souvent du chiffre exact ; +12 à 18 s par rapport à un ordre | Utile, avec des réponses « introuvable » honnêtes |
 | **Quantification plus basse** (2 bits) | GGUF 30 % plus léger | S'effondre sans calibration (17 %) ; avec matrice d'importance 80 % / 67 % et appels d'outils dangereux sur les pièges ; à peine plus rapide sur CPU | Inutilisable : une borne basse ([04](04-resultats.md)) |
+| **IQ4_XS** (4 bits, à dictionnaire) | 9 % plus léger que le Q4_K_M ; traitement du prompt +4 % sur ce CPU | Demande une matrice d'importance ; un appel d'outil de plus sur une phrase piège | Équivalent au Q4_K_M, gain trop faible pour changer ([04](04-resultats.md)) |
 | **Quantification plus haute** (8 bits) | Qualité de référence | Même justesse que le Q4_K_M, 60 % plus gros, plus lent | Aucun bénéfice : le Q4_K_M est le bon compromis |
 | **Modèle plus petit** (0,6 Md) | ~40 % plus rapide ; fichier de 0,4 Go | Plus de confirmations erronées ; lit moins bien les extraits | Viable si la latence prime |
 | **Modèle plus gros** (4 Md, non mesuré) | Probablement meilleur pour lire les extraits web | Latence ×2 à 2,5 sur ce CPU (estimation), fichiers plus gros | Un GPU serait le vrai levier |

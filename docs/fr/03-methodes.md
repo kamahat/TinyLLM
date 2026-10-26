@@ -72,7 +72,7 @@ Ils ont été évalués sur le **taux d'erreur de mots** et — surtout — **de
 
 ## 8. Quantification
 
-Les modèles de production sont des GGUF **Q4_K_M** (k-quants de llama.cpp, ~4,8 bits par poids). Pour trouver les bornes, les poids affinés ont aussi été quantifiés en **Q2_K** (2 bits), avec et sans **matrice d'importance** (`llama-imatrix`, texte de calibration = 48 exemples d'entraînement rendus exactement comme le proxy les présente au modèle), et le modèle 0,6B en **Q8_0** (8 bits). Résultats en [04](04-resultats.md#6-quantification--jusquoù-descendre-et-monter-).
+Les modèles de production sont des GGUF **Q4_K_M** (k-quants de llama.cpp, ~4,8 bits par poids). Pour trouver les bornes, les poids affinés ont aussi été quantifiés en **Q2_K** (2 bits), avec et sans **matrice d'importance** (`llama-imatrix`, texte de calibration = 48 exemples d'entraînement rendus exactement comme le proxy les présente au modèle), le modèle 0,6B en **Q8_0** (8 bits), et le modèle 1,7B en **IQ4_XS** (4 bits, i-quant) et en **Q4_K_M avec la même matrice d'importance** pour séparer l'effet de la calibration de celui du format. Résultats en [04](04-resultats.md#6-quantification--jusquoù-descendre-et-monter-).
 
 ## Comment fonctionne le banc
 

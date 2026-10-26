@@ -49,6 +49,8 @@ python3 scripts/training/make_calib.py
 llama-imatrix -m f16.gguf -f calib.txt -o imatrix.dat -c 1536 -t 8 -ngl 0
 llama-quantize --imatrix imatrix.dat f16.gguf q2_k_im.gguf Q2_K
 llama-quantize f16.gguf q8_0.gguf Q8_0        # référence 8 bits
+llama-quantize --imatrix imatrix.dat f16.gguf iq4_xs.gguf IQ4_XS
+llama-quantize --imatrix imatrix.dat f16.gguf q4_k_m_im.gguf Q4_K_M
 ```
 
 Importez chaque variante dans une **instance Ollama de test séparée** (autre port) et lancez `scripts/bench/quant_tests.sh MODELE ETIQUETTE`, pour ne jamais évincer le modèle de production.

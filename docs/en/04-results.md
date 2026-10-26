@@ -66,6 +66,8 @@ Tablet-prompt benchmark (46 phrases; with history = previous turns replayed; adv
 | Qwen3-1.7B v5 (compact + web) | Q2_K | 8/46 (17 %) | 9/46 (20 %) | 24/38 | 0/6 (0 %) | n/a (loops: 0) | 6.1 s | 0.78 GB |
 | Qwen3-1.7B v5 (compact + web) | Q2_K (imatrix) | 37/46 (80 %) | 31/46 (67 %) | 1/38 | 5/6 (83 %) | 0/33 | 4.5 s | 0.78 GB |
 | Qwen3-0.6B v5 (compact + web) | Q8_0 | 43/46 (93 %) | 42/46 (91 %) | 1/38 | 6/6 (100 %) | 0/33 | 3.3 s | 0.64 GB |
+| Qwen3-1.7B v5 (compact + web) | Q4_K_M (imatrix) | 45/46 (98 %) | 43/46 (93 %) | 1/38 | 6/6 (100 %) | 0/33 | 4.9 s | 1.1 GB |
+| Qwen3-1.7B v5 (compact + web) | IQ4_XS (imatrix) | 44/46 (96 %) | 42/46 (91 %) | 1/38 | 6/6 (100 %) | 0/33 | 4.9 s | 1.0 GB |
 
 **Findings**
 - The **compact prompt + proxy** is the main gain: the same Qwen3-1.7B goes from 93 %/85 % (framework prompt, v3) to **96 %/91 %** (v4c), with a prompt 2.3 times smaller and a faster answer (5.0 s instead of 7.8 s).
@@ -129,5 +131,22 @@ Each fine-tuned model was exported to GGUF f16 and quantized with llama.cpp (`ll
 - **The importance matrix repairs most of it** (17 % → 80 %, no broken format) with no extra training, which gives a useful **lower bound**. But it stays 13 to 29 points below Q4_K_M, and with history **3 of 5 trap phrases trigger a tool call**: not safe for a voice assistant that acts on the home.
 - **Smaller is not much faster**: the 2-bit file is 30 % smaller, but a command takes 4.5 s instead of 4.8 s. On this CPU, prompt processing and de-quantization cost as much as reading the weights.
 - **8 bits gives nothing**: on the 0.6B, Q8_0 has the same accuracy as Q4_K_M (93 % / 91 %), a file 60 % larger and a ~14 % slower generation: an **upper bound** with no benefit.
-- **Q4_K_M is the sweet spot** for this task: near-lossless, small, fast.
-- **Not measured**: Q3_K_M, Q5_K_M, Q6_K (expected between the two bounds), IQ2/IQ3 quantizations (slower on CPU), a larger calibration set, quantization-aware fine-tuning.
+- **4 bits is the sweet spot** for this task (Q4_K_M, or IQ4_XS: see below): near-lossless, small, fast.
+- **Not measured**: Q3_K_M, Q5_K_M, Q6_K (expected between the two bounds), IQ1/IQ2/IQ3 quantizations, a larger calibration set, quantization-aware fine-tuning.
+
+### 4-bit formats compared: Q4_K_M, Q4_K_M + imatrix, IQ4_XS + imatrix
+
+Same f16 weights (Qwen3-1.7B v5). Both "imatrix" variants use the **same** importance matrix (48 calibration examples), so the table separates the effect of the **calibration** (Q4_K_M versus Q4_K_M + imatrix) from the effect of the **format** (Q4_K_M + imatrix versus IQ4_XS + imatrix). Accuracy: 46-phrase benchmark. Speed: micro-benchmark with the real 1,500-token prompt, prompt cache disabled at every run, 12 runs in alternating blocks, medians.
+
+| Variant | File | Correct commands, no history / history | Forced error | Trap phrases that triggered a tool call (of 8) | Spurious refusals after a success (no history / history) | Generation of a command | Web: real queries / latency | Prompt processing | Decoding |
+|---|---|---|---|---|---|---|---|---|---|
+| Q4_K_M (production) | 1,107 MB | 93 % / 96 % | 32/34 | 0 | 2/35 · 5/36 | 4.8 s | 15/22 / 16.5 s | 44.9 tok/s | 6.9 tok/s |
+| Q4_K_M + imatrix | 1,107 MB | **98 %** / 93 % | 33/34 | 0 | 2/37 · 3/35 | 4.9 s | 15/22 / 16.9 s | not measured (same tensor types) | not measured |
+| IQ4_XS + imatrix | **1,010 MB** | 96 % / 91 % | 33/34 | 1 | **0/37 · 0/35** | 4.9 s | 16/22 / 16.3 s | **46.9 tok/s** | 7.1 tok/s |
+
+**Findings**
+- **Accuracy: the three variants are indistinguishable** (93–98 % without history, 91–96 % with history): the spread is one to three phrases out of 46, which is noise for a single run.
+- **The importance matrix has no clear effect at 4 bits** (+1 phrase without history, −1 with history). It matters much more at 2 bits, where it was decisive (17 % → 80 %).
+- **IQ4_XS is not slower on this CPU**, contrary to the usual expectation for lookup-based quantizations: **9 % smaller**, prompt processing **+4 %**, decoding equal within noise.
+- **One trap phrase** ("Éteins la télé du salon") makes IQ4_XS call a tool on a non-existent device; the framework answers with an error and no other device is touched (same behaviour as the 0.6B). The two Q4_K_M variants do not.
+- **Verdict**: IQ4_XS is a valid drop-in replacement for Q4_K_M: slightly smaller and faster, same accuracy. The gain is small (about 100 MB and ~1.5 s on a cold 1,500-token prompt), so it is **not worth changing production by itself**.

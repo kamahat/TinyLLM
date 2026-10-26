@@ -72,7 +72,7 @@ They were evaluated both on the **word error rate** and — more importantly —
 
 ## 8. Quantization
 
-Production models are GGUF **Q4_K_M** (llama.cpp k-quants, ~4.8 bits per weight). To find the bounds, the fine-tuned weights were also quantized to **Q2_K** (2-bit), with and without an **importance matrix** (`llama-imatrix`, calibration text = 48 training examples rendered exactly as the proxy shows them to the model), and the 0.6B model to **Q8_0** (8-bit). Results in [04](04-results.md#6-quantization-how-low-and-how-high-can-we-go).
+Production models are GGUF **Q4_K_M** (llama.cpp k-quants, ~4.8 bits per weight). To find the bounds, the fine-tuned weights were also quantized to **Q2_K** (2-bit), with and without an **importance matrix** (`llama-imatrix`, calibration text = 48 training examples rendered exactly as the proxy shows them to the model), the 0.6B model to **Q8_0** (8-bit), and the 1.7B model to **IQ4_XS** (4-bit, i-quant) and **Q4_K_M with the same importance matrix** to separate the effect of the calibration from the effect of the format. Results in [04](04-results.md#6-quantization-how-low-and-how-high-can-we-go).
 
 ## How the benchmark works
 
