@@ -41,6 +41,18 @@ python3 scripts/stt_tts/bench_stt.py                        # STT models, clean 
 
 Switch production only after: no regression on the benchmark, **zero loops**, **zero false confirmation after a tool error**, all adversarial cases passed, no invented figure. Then warm the cache (`scripts/bench/warmup_proxy.py`) and keep the previous model and proxy for an instant rollback.
 
+## 6. Quantize differently (optional)
+
+```bash
+# calibration text in the proxy format, then the importance matrix, then the 2-bit model
+python3 scripts/training/make_calib.py
+llama-imatrix -m f16.gguf -f calib.txt -o imatrix.dat -c 1536 -t 8 -ngl 0
+llama-quantize --imatrix imatrix.dat f16.gguf q2_k_im.gguf Q2_K
+llama-quantize f16.gguf q8_0.gguf Q8_0        # 8-bit reference
+```
+
+Import each variant into a **separate test Ollama instance** (other port) and run `scripts/bench/quant_tests.sh MODEL TAG` so the production model is never evicted.
+
 ## Rules worth keeping
 
 1. A development agent **never executes real commands**; use the simulation proxy or call the proxy directly over HTTP.

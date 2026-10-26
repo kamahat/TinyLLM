@@ -70,6 +70,10 @@ Whisper (faster-whisper, int8) était le premier choix. Sa mesure a montré un *
 
 Ils ont été évalués sur le **taux d'erreur de mots** et — surtout — **de bout en bout** : la transcription de chaque moteur des phrases du banc est rejouée dans le LLM de production, car une erreur de transcription ne compte que si elle change l'action ([04](04-resultats.md)).
 
+## 8. Quantification
+
+Les modèles de production sont des GGUF **Q4_K_M** (k-quants de llama.cpp, ~4,8 bits par poids). Pour trouver les bornes, les poids affinés ont aussi été quantifiés en **Q2_K** (2 bits), avec et sans **matrice d'importance** (`llama-imatrix`, texte de calibration = 48 exemples d'entraînement rendus exactement comme le proxy les présente au modèle), et le modèle 0,6B en **Q8_0** (8 bits). Résultats en [04](04-resultats.md#6-quantification--jusquoù-descendre-et-monter-).
+
 ## Comment fonctionne le banc
 
 - **92 phrases en français** (data/benchmark_fr_92.json) : lumières, volets, clim, scripts, listes, informations, culture générale, **pièges** (appareils inexistants), **transcriptions bruitées**, et cas **adverses** (capteurs indisponibles).

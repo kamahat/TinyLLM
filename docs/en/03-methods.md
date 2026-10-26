@@ -70,6 +70,10 @@ Whisper (faster-whisper, int8) was the first choice. Measuring it showed a **fix
 
 They were evaluated both on the **word error rate** and — more importantly — **end to end**: each engine's transcript of the benchmark phrases is replayed through the production LLM, because a transcription error only matters if it changes the action ([04](04-results.md)).
 
+## 8. Quantization
+
+Production models are GGUF **Q4_K_M** (llama.cpp k-quants, ~4.8 bits per weight). To find the bounds, the fine-tuned weights were also quantized to **Q2_K** (2-bit), with and without an **importance matrix** (`llama-imatrix`, calibration text = 48 training examples rendered exactly as the proxy shows them to the model), and the 0.6B model to **Q8_0** (8-bit). Results in [04](04-results.md#6-quantization-how-low-and-how-high-can-we-go).
+
 ## How the benchmark works
 
 - **92 French phrases** (data/benchmark_fr_92.json): lights, shutters, climate, scripts, lists, information, general knowledge, **traps** (non-existent devices), **noisy transcriptions**, and **adversarial** cases (sensors that are unavailable).

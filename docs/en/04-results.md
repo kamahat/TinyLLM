@@ -63,6 +63,9 @@ Tablet-prompt benchmark (46 phrases; with history = previous turns replayed; adv
 | CroissantLLM 1.3B v4d (llama.cpp tokenization) | Q4_K_M | 42/46 (91 %) | 39/46 (85 %) | 1/38 | 6/6 (100 %) | 0/34 | 4.9 s | 0.87 GB |
 | **Qwen3-1.7B v5 (compact + web) — in production** | Q4_K_M | 43/46 (93 %) | 44/46 (96 %) | 1/38 | 6/6 (100 %) | 0/33 | 4.8 s | 1.1 GB |
 | Qwen3-0.6B v5 (compact + web) | Q4_K_M | 43/46 (93 %) | 42/46 (91 %) | 1/38 | 6/6 (100 %) | 0/33 | 2.9 s | 0.40 GB |
+| Qwen3-1.7B v5 (compact + web) | Q2_K | 8/46 (17 %) | 9/46 (20 %) | 24/38 | 0/6 (0 %) | n/a (loops: 0) | 6.1 s | 0.78 GB |
+| Qwen3-1.7B v5 (compact + web) | Q2_K (imatrix) | 37/46 (80 %) | 31/46 (67 %) | 1/38 | 5/6 (83 %) | 0/33 | 4.5 s | 0.78 GB |
+| Qwen3-0.6B v5 (compact + web) | Q8_0 | 43/46 (93 %) | 42/46 (91 %) | 1/38 | 6/6 (100 %) | 0/33 | 3.3 s | 0.64 GB |
 
 **Findings**
 - The **compact prompt + proxy** is the main gain: the same Qwen3-1.7B goes from 93 %/85 % (framework prompt, v3) to **96 %/91 %** (v4c), with a prompt 2.3 times smaller and a faster answer (5.0 s instead of 7.8 s).
@@ -108,3 +111,23 @@ Shorter snippets are faster but clearly less accurate: not retained. A figure th
 | **With the streaming STT engine instead of Whisper small** | ~0.1 s | unchanged | unchanged | simple phrase **~0.4 s**, command **~6–7 s**, web **~17–23 s** |
 
 The framework's native prompt (3,000 tokens) took **63–70 s** to process on a cold cache, which is what first made the assistant look "dead" before the compact prompt and pre-warming existed.
+
+## 6. Quantization: how low (and how high) can we go?
+
+Each fine-tuned model was exported to GGUF f16 and quantized with llama.cpp (`llama-quantize`), then run through the **same benchmarks** as the Q4_K_M versions, on an isolated Ollama instance on the same machine. The 2-bit variants were also tried **with an importance matrix (imatrix)**: calibration on 48 examples rendered exactly as the proxy presents them to the model (24 first turns, 24 turns with tool results; 49 chunks of 1,536 tokens). One run per variant: differences of one or two phrases are noise.
+
+| Model | Quantization | File | Correct commands, no history / history | Trap phrases that triggered a tool call, no history / history (of 5) | Generation of a command | Web routing / real queries | Web latency |
+|---|---|---|---|---|---|---|---|
+| Qwen3-1.7B v5 | **Q4_K_M (production)** | 1.1 GB | 93 % / 96 % | 0 / 0 | 4.8 s | 105/105 / 15/22 | 16.5 s |
+| Qwen3-1.7B v5 | Q2_K | 0.78 GB | 17 % / 20 % | 0 / 0 (answers in text) | 6.1 s | 0/105 | n/a |
+| Qwen3-1.7B v5 | Q2_K + imatrix | 0.78 GB | 80 % / 67 % | 1 / 3 | 4.5 s | 105/105 / 15/22 | 16.0 s |
+| Qwen3-0.6B v5 | Q4_K_M | 0.40 GB | 93 % / 91 % | 1 / 1 | 2.9 s | 105/105 / 10/22 | 9.0 s |
+| Qwen3-0.6B v5 | Q8_0 | 0.64 GB | 93 % / 91 % | 1 / 1 | 3.3 s | 105/105 / 9/22 | 10.5 s |
+
+**Findings**
+- **2 bits without calibration breaks the model**: 13 of 46 answers have a broken tool-call format, 0 of 38 commands are correct, and the web tool is never called.
+- **The importance matrix repairs most of it** (17 % → 80 %, no broken format) with no extra training, which gives a useful **lower bound**. But it stays 13 to 29 points below Q4_K_M, and with history **3 of 5 trap phrases trigger a tool call**: not safe for a voice assistant that acts on the home.
+- **Smaller is not much faster**: the 2-bit file is 30 % smaller, but a command takes 4.5 s instead of 4.8 s. On this CPU, prompt processing and de-quantization cost as much as reading the weights.
+- **8 bits gives nothing**: on the 0.6B, Q8_0 has the same accuracy as Q4_K_M (93 % / 91 %), a file 60 % larger and a ~14 % slower generation: an **upper bound** with no benefit.
+- **Q4_K_M is the sweet spot** for this task: near-lossless, small, fast.
+- **Not measured**: Q3_K_M, Q5_K_M, Q6_K (expected between the two bounds), IQ2/IQ3 quantizations (slower on CPU), a larger calibration set, quantization-aware fine-tuning.

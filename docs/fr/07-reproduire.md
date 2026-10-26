@@ -41,6 +41,18 @@ python3 scripts/stt_tts/bench_stt.py                         # modèles STT, aud
 
 Ne basculez la production qu'après : pas de régression sur le banc, **zéro boucle**, **zéro fausse confirmation après une erreur d'outil**, tous les cas adverses réussis, aucun chiffre inventé. Puis préchauffez le cache (`scripts/bench/warmup_proxy.py`) et gardez l'ancien modèle et l'ancien proxy pour un retour arrière immédiat.
 
+## 6. Quantifier autrement (optionnel)
+
+```bash
+# texte de calibration au format du proxy, puis matrice d'importance, puis modèle 2 bits
+python3 scripts/training/make_calib.py
+llama-imatrix -m f16.gguf -f calib.txt -o imatrix.dat -c 1536 -t 8 -ngl 0
+llama-quantize --imatrix imatrix.dat f16.gguf q2_k_im.gguf Q2_K
+llama-quantize f16.gguf q8_0.gguf Q8_0        # référence 8 bits
+```
+
+Importez chaque variante dans une **instance Ollama de test séparée** (autre port) et lancez `scripts/bench/quant_tests.sh MODELE ETIQUETTE`, pour ne jamais évincer le modèle de production.
+
 ## Règles à conserver
 
 1. Un agent de développement **n'exécute jamais de vraies commandes** ; utilisez le proxy de simulation ou appelez directement le proxy en HTTP.

@@ -25,6 +25,8 @@
 | **Compact prompt + proxy** | Prompt ÷ 2.3; stable cache; hard limits on loops, length and tool names; enables safe testing | One more service to run; the model is coupled to the proxy's format | **Biggest gain** |
 | **Deterministic guard-rails** | Exact, instant, testable; fix failures that more training does not | They hide model weaknesses instead of removing them; each is a special case | **Strongly recommended** |
 | **Local web search** | Private, no API key | Rate-limited engines; snippets often lack the exact figure; +12–18 s over a command | Useful, with honest "not found" answers |
+| **Lower quantization** (2-bit) | GGUF 30 % smaller | Collapses without calibration (17 %); with an importance matrix 80 % / 67 % and unsafe tool calls on trap phrases; barely faster on CPU | Not usable: a lower bound ([04](04-results.md)) |
+| **Higher quantization** (8-bit) | Reference quality | Same accuracy as Q4_K_M, 60 % larger, slower | No benefit: Q4_K_M is the sweet spot |
 | **Smaller model** (0.6B) | ~40 % faster; 0.4 GB file | More wrong confirmations; weaker at reading snippets | Viable if latency dominates |
 | **Bigger model** (4B, not measured) | Probably better at reading web snippets | Latency ×2–2.5 on this CPU (estimate), larger files | A GPU would be the real lever |
 

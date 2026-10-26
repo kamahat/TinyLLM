@@ -63,6 +63,9 @@ Banc au prompt de la tablette (46 phrases ; avec historique = tours précédents
 | CroissantLLM 1,3B v4d (tokenisation llama.cpp) | Q4_K_M | 42/46 (91 %) | 39/46 (85 %) | 1/38 | 6/6 (100 %) | 0/34 | 4,9 s | 0,87 Go |
 | **Qwen3-1.7B v5 (compact + web) — en production** | Q4_K_M | 43/46 (93 %) | 44/46 (96 %) | 1/38 | 6/6 (100 %) | 0/33 | 4,8 s | 1,1 Go |
 | Qwen3-0.6B v5 (compact + web) | Q4_K_M | 43/46 (93 %) | 42/46 (91 %) | 1/38 | 6/6 (100 %) | 0/33 | 2,9 s | 0,40 Go |
+| Qwen3-1.7B v5 (compact + web) | Q2_K | 8/46 (17 %) | 9/46 (20 %) | 24/38 | 0/6 (0 %) | n/a (boucles : 0) | 6,1 s | 0,78 Go |
+| Qwen3-1.7B v5 (compact + web) | Q2_K (imatrix) | 37/46 (80 %) | 31/46 (67 %) | 1/38 | 5/6 (83 %) | 0/33 | 4,5 s | 0,78 Go |
+| Qwen3-0.6B v5 (compact + web) | Q8_0 | 43/46 (93 %) | 42/46 (91 %) | 1/38 | 6/6 (100 %) | 0/33 | 3,3 s | 0,64 Go |
 
 **Constats**
 - Le **prompt compact + proxy** est le gain principal : le même Qwen3-1.7B passe de 93 %/85 % (prompt du framework, v3) à **96 %/91 %** (v4c), avec un prompt 2,3 fois plus petit et une réponse plus rapide (5,0 s au lieu de 7,8 s).
@@ -108,3 +111,23 @@ Des extraits plus courts vont plus vite mais sont nettement moins justes : non r
 | **Avec le moteur STT en streaming au lieu de Whisper small** | ~0,1 s | inchangé | inchangé | phrase simple **~0,4 s**, commande **~6–7 s**, web **~17–23 s** |
 
 Le prompt natif du framework (3 000 tokens) prenait **63 à 70 s** à traiter à froid, ce qui a d'abord fait croire que l'assistant était « mort » avant le prompt compact et le préchauffage.
+
+## 6. Quantification : jusqu'où descendre (et monter) ?
+
+Chaque modèle affiné a été exporté en GGUF f16 puis quantifié avec llama.cpp (`llama-quantize`), et passé dans les **mêmes bancs** que les versions Q4_K_M, sur une instance Ollama isolée de la même machine. Les variantes à 2 bits ont aussi été essayées **avec une matrice d'importance (imatrix)** : calibration sur 48 exemples rendus exactement comme le proxy les présente au modèle (24 premiers tours, 24 tours avec résultats d'outils ; 49 blocs de 1 536 tokens). Une seule exécution par variante : des écarts d'une ou deux phrases relèvent du bruit.
+
+| Modèle | Quantification | Fichier | Commandes correctes, sans / avec historique | Phrases pièges ayant déclenché un appel d'outil, sans / avec historique (sur 5) | Génération d'une commande | Routage web / requêtes réelles | Latence web |
+|---|---|---|---|---|---|---|---|
+| Qwen3-1,7B v5 | **Q4_K_M (production)** | 1,1 Go | 93 % / 96 % | 0 / 0 | 4,8 s | 105/105 / 15/22 | 16,5 s |
+| Qwen3-1,7B v5 | Q2_K | 0,78 Go | 17 % / 20 % | 0 / 0 (répond en texte) | 6,1 s | 0/105 | n/m |
+| Qwen3-1,7B v5 | Q2_K + imatrix | 0,78 Go | 80 % / 67 % | 1 / 3 | 4,5 s | 105/105 / 15/22 | 16,0 s |
+| Qwen3-0,6B v5 | Q4_K_M | 0,40 Go | 93 % / 91 % | 1 / 1 | 2,9 s | 105/105 / 10/22 | 9,0 s |
+| Qwen3-0,6B v5 | Q8_0 | 0,64 Go | 93 % / 91 % | 1 / 1 | 3,3 s | 105/105 / 9/22 | 10,5 s |
+
+**Constats**
+- **Le 2 bits sans calibration casse le modèle** : 13 réponses sur 46 ont un format d'appel d'outil cassé, 0 commande sur 38 est correcte, et l'outil web n'est jamais appelé.
+- **La matrice d'importance répare l'essentiel** (17 % → 80 %, plus aucun format cassé) sans entraînement supplémentaire, ce qui donne une **borne basse** utile. Mais on reste 13 à 29 points sous le Q4_K_M, et avec historique **3 pièges sur 5 déclenchent un appel d'outil** : pas sûr pour un assistant vocal qui agit sur la maison.
+- **Plus petit n'est pas beaucoup plus rapide** : le fichier à 2 bits est 30 % plus léger, mais une commande prend 4,5 s au lieu de 4,8 s. Sur ce CPU, le traitement du prompt et la déquantification coûtent autant que la lecture des poids.
+- **Le 8 bits n'apporte rien** : sur le 0,6B, le Q8_0 a la même justesse que le Q4_K_M (93 % / 91 %), un fichier 60 % plus gros et une génération ~14 % plus lente : une **borne haute** sans bénéfice.
+- **Le Q4_K_M est le bon compromis** pour cette tâche : quasi sans perte, léger, rapide.
+- **Non mesuré** : Q3_K_M, Q5_K_M, Q6_K (attendus entre les deux bornes), quantifications IQ2/IQ3 (plus lentes sur CPU), un jeu de calibration plus grand, l'affinage conscient de la quantification.
