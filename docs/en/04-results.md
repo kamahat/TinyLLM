@@ -136,17 +136,17 @@ Each fine-tuned model was exported to GGUF f16 and quantized with llama.cpp (`ll
 
 ### 4-bit formats compared: Q4_K_M, Q4_K_M + imatrix, IQ4_XS + imatrix
 
-Same f16 weights (Qwen3-1.7B v5). Both "imatrix" variants use the **same** importance matrix (48 calibration examples), so the table separates the effect of the **calibration** (Q4_K_M versus Q4_K_M + imatrix) from the effect of the **format** (Q4_K_M + imatrix versus IQ4_XS + imatrix). Accuracy: 46-phrase benchmark. Speed: micro-benchmark with the real 1,500-token prompt, prompt cache disabled at every run, 12 runs in alternating blocks, medians.
+Same f16 weights (Qwen3-1.7B v5). Both "imatrix" variants use the **same** importance matrix (48 calibration examples), so the table separates the effect of the **calibration** (Q4_K_M versus Q4_K_M + imatrix) from the effect of the **format** (Q4_K_M + imatrix versus IQ4_XS + imatrix). Accuracy: 46-phrase benchmark. Speed: micro-benchmark with the real 1,500-token prompt, prompt cache disabled at every run, model unloaded between runs, 6 runs per variant in two passes of opposite order (A B C, then C B A), medians.
 
 | Variant | File | Correct commands, no history / history | Forced error | Trap phrases that triggered a tool call (of 8) | Spurious refusals after a success (no history / history) | Generation of a command | Web: real queries / latency | Prompt processing | Decoding |
 |---|---|---|---|---|---|---|---|---|---|
-| Q4_K_M (production) | 1,107 MB | 93 % / 96 % | 32/34 | 0 | 2/35 · 5/36 | 4.8 s | 15/22 / 16.5 s | 44.9 tok/s | 6.9 tok/s |
-| Q4_K_M + imatrix | 1,107 MB | **98 %** / 93 % | 33/34 | 0 | 2/37 · 3/35 | 4.9 s | 15/22 / 16.9 s | not measured (same tensor types) | not measured |
-| IQ4_XS + imatrix | **1,010 MB** | 96 % / 91 % | 33/34 | 1 | **0/37 · 0/35** | 4.9 s | 16/22 / 16.3 s | **46.9 tok/s** | 7.1 tok/s |
+| Q4_K_M (production) | 1,107 MB | 93 % / 96 % | 32/34 | 0 | 2/35 · 5/36 | 4.8 s | 15/22 / 16.5 s | 44.8 tok/s | 7.0 tok/s |
+| Q4_K_M + imatrix | 1,107 MB | **98 %** / 93 % | 33/34 | 0 | 2/37 · 3/35 | 4.9 s | 15/22 / 16.9 s | 45.4 tok/s | 6.9 tok/s |
+| IQ4_XS + imatrix | **1,010 MB** | 96 % / 91 % | 33/34 | 1 | **0/37 · 0/35** | 4.9 s | 16/22 / 16.3 s | **46.6 tok/s** | 7.3 tok/s |
 
 **Findings**
 - **Accuracy: the three variants are indistinguishable** (93–98 % without history, 91–96 % with history): the spread is one to three phrases out of 46, which is noise for a single run.
 - **The importance matrix has no clear effect at 4 bits** (+1 phrase without history, −1 with history). It matters much more at 2 bits, where it was decisive (17 % → 80 %).
-- **IQ4_XS is not slower on this CPU**, contrary to the usual expectation for lookup-based quantizations: **9 % smaller**, prompt processing **+4 %**, decoding equal within noise.
+- **IQ4_XS is not slower on this CPU**, contrary to the usual expectation for lookup-based quantizations: **9 % smaller**, prompt processing **+4 %** (run-to-run spread under 1 %, so the gap is real), decoding equal within noise. Q4_K_M + imatrix is as fast as Q4_K_M (+1 %: same tensor types).
 - **One trap phrase** ("Éteins la télé du salon") makes IQ4_XS call a tool on a non-existent device; the framework answers with an error and no other device is touched (same behaviour as the 0.6B). The two Q4_K_M variants do not.
-- **Verdict**: IQ4_XS is a valid drop-in replacement for Q4_K_M: slightly smaller and faster, same accuracy. The gain is small (about 100 MB and ~1.5 s on a cold 1,500-token prompt), so it is **not worth changing production by itself**.
+- **Verdict**: IQ4_XS is a valid drop-in replacement for Q4_K_M: slightly smaller and faster, same accuracy. The gain is small (about 100 MB and ~1.3 s on a cold 1,500-token prompt), so it is **not worth changing production by itself**.

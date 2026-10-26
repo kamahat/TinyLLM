@@ -136,17 +136,17 @@ Chaque modèle affiné a été exporté en GGUF f16 puis quantifié avec llama.c
 
 ### Formats 4 bits comparés : Q4_K_M, Q4_K_M + imatrix, IQ4_XS + imatrix
 
-Mêmes poids f16 (Qwen3-1,7B v5). Les deux variantes « imatrix » utilisent **la même** matrice d'importance (48 exemples de calibration) : le tableau sépare donc l'effet de la **calibration** (Q4_K_M contre Q4_K_M + imatrix) de l'effet du **format** (Q4_K_M + imatrix contre IQ4_XS + imatrix). Justesse : banc de 46 phrases. Vitesse : micro-banc avec le vrai prompt de 1 500 tokens, cache de prompt désactivé à chaque essai, 12 essais en blocs alternés, médianes.
+Mêmes poids f16 (Qwen3-1,7B v5). Les deux variantes « imatrix » utilisent **la même** matrice d'importance (48 exemples de calibration) : le tableau sépare donc l'effet de la **calibration** (Q4_K_M contre Q4_K_M + imatrix) de l'effet du **format** (Q4_K_M + imatrix contre IQ4_XS + imatrix). Justesse : banc de 46 phrases. Vitesse : micro-banc avec le vrai prompt de 1 500 tokens, cache de prompt désactivé à chaque essai, modèle déchargé entre deux essais, 6 essais par variante en deux passes dans des ordres opposés (A B C, puis C B A), médianes.
 
 | Variante | Fichier | Commandes correctes, sans / avec historique | Erreur forcée | Pièges ayant déclenché un appel d'outil (sur 8) | Refus à tort après un succès (sans / avec historique) | Génération d'une commande | Web : requêtes réelles / latence | Traitement du prompt | Décodage |
 |---|---|---|---|---|---|---|---|---|---|
-| Q4_K_M (production) | 1 107 Mo | 93 % / 96 % | 32/34 | 0 | 2/35 · 5/36 | 4,8 s | 15/22 / 16,5 s | 44,9 tok/s | 6,9 tok/s |
-| Q4_K_M + imatrix | 1 107 Mo | **98 %** / 93 % | 33/34 | 0 | 2/37 · 3/35 | 4,9 s | 15/22 / 16,9 s | non mesuré (mêmes types de tenseurs) | non mesuré |
-| IQ4_XS + imatrix | **1 010 Mo** | 96 % / 91 % | 33/34 | 1 | **0/37 · 0/35** | 4,9 s | 16/22 / 16,3 s | **46,9 tok/s** | 7,1 tok/s |
+| Q4_K_M (production) | 1 107 Mo | 93 % / 96 % | 32/34 | 0 | 2/35 · 5/36 | 4,8 s | 15/22 / 16,5 s | 44,8 tok/s | 7,0 tok/s |
+| Q4_K_M + imatrix | 1 107 Mo | **98 %** / 93 % | 33/34 | 0 | 2/37 · 3/35 | 4,9 s | 15/22 / 16,9 s | 45,4 tok/s | 6,9 tok/s |
+| IQ4_XS + imatrix | **1 010 Mo** | 96 % / 91 % | 33/34 | 1 | **0/37 · 0/35** | 4,9 s | 16/22 / 16,3 s | **46,6 tok/s** | 7,3 tok/s |
 
 **Constats**
 - **Justesse : les trois variantes sont indiscernables** (93–98 % sans historique, 91–96 % avec) : l'écart est d'une à trois phrases sur 46, ce qui est du bruit pour une seule exécution.
 - **La matrice d'importance n'a pas d'effet net à 4 bits** (+1 phrase sans historique, −1 avec). Elle compte beaucoup plus à 2 bits, où elle était décisive (17 % → 80 %).
-- **L'IQ4_XS n'est pas plus lent sur ce CPU**, contrairement à ce qu'on attend d'ordinaire des quantifications à dictionnaire : **9 % plus léger**, traitement du prompt **+4 %**, décodage égal dans le bruit.
+- **L'IQ4_XS n'est pas plus lent sur ce CPU**, contrairement à ce qu'on attend d'ordinaire des quantifications à dictionnaire : **9 % plus léger**, traitement du prompt **+4 %** (dispersion d'un essai à l'autre inférieure à 1 %, donc l'écart est réel), décodage égal dans le bruit. Le Q4_K_M + imatrix est aussi rapide que le Q4_K_M (+1 % : mêmes types de tenseurs).
 - **Une phrase piège** (« Éteins la télé du salon ») fait appeler un outil par l'IQ4_XS sur un appareil inexistant ; le framework répond par une erreur sans toucher d'autre appareil (même comportement que le 0,6B). Les deux variantes Q4_K_M ne le font pas.
-- **Verdict** : l'IQ4_XS peut remplacer le Q4_K_M sans réserve : un peu plus léger et plus rapide, même justesse. Le gain est faible (environ 100 Mo et ~1,5 s sur un prompt froid de 1 500 tokens) : **cela ne justifie pas à lui seul de changer la production**.
+- **Verdict** : l'IQ4_XS peut remplacer le Q4_K_M sans réserve : un peu plus léger et plus rapide, même justesse. Le gain est faible (environ 100 Mo et ~1,3 s sur un prompt froid de 1 500 tokens) : **cela ne justifie pas à lui seul de changer la production**.

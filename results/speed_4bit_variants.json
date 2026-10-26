@@ -1,0 +1,134 @@
+{
+ "qwen3-ha-v5-q4km": [
+  {
+   "prefill_tok": 1506,
+   "prefill_s": 33.528737999,
+   "gen_tok": 27,
+   "gen_s": 3.931158,
+   "total_s": 43.07437443733215
+  },
+  {
+   "prefill_tok": 1506,
+   "prefill_s": 33.541599,
+   "gen_tok": 27,
+   "gen_s": 3.649652,
+   "total_s": 40.90157198905945
+  },
+  {
+   "prefill_tok": 1505,
+   "prefill_s": 33.792792,
+   "gen_tok": 27,
+   "gen_s": 3.889297,
+   "total_s": 41.110252380371094
+  },
+  {
+   "prefill_tok": 1504,
+   "prefill_s": 33.614851,
+   "gen_tok": 27,
+   "gen_s": 3.851657,
+   "total_s": 41.896857023239136
+  },
+  {
+   "prefill_tok": 1507,
+   "prefill_s": 33.640571,
+   "gen_tok": 27,
+   "gen_s": 3.755473,
+   "total_s": 41.56390690803528
+  },
+  {
+   "prefill_tok": 1507,
+   "prefill_s": 33.814224,
+   "gen_tok": 27,
+   "gen_s": 4.232680999,
+   "total_s": 42.22324776649475
+  }
+ ],
+ "qwen3-ha-v5-q4kmim": [
+  {
+   "prefill_tok": 1504,
+   "prefill_s": 33.101076999,
+   "gen_tok": 27,
+   "gen_s": 3.857557,
+   "total_s": 42.133344650268555
+  },
+  {
+   "prefill_tok": 1507,
+   "prefill_s": 33.041604,
+   "gen_tok": 27,
+   "gen_s": 3.704269,
+   "total_s": 41.17640829086304
+  },
+  {
+   "prefill_tok": 1504,
+   "prefill_s": 33.128845999,
+   "gen_tok": 27,
+   "gen_s": 4.448675,
+   "total_s": 42.00752377510071
+  },
+  {
+   "prefill_tok": 1504,
+   "prefill_s": 33.09805,
+   "gen_tok": 27,
+   "gen_s": 4.007352,
+   "total_s": 42.04666996002197
+  },
+  {
+   "prefill_tok": 1507,
+   "prefill_s": 33.178875999,
+   "gen_tok": 27,
+   "gen_s": 3.843204,
+   "total_s": 41.9410400390625
+  },
+  {
+   "prefill_tok": 1506,
+   "prefill_s": 33.430417,
+   "gen_tok": 27,
+   "gen_s": 4.132962999,
+   "total_s": 42.500601291656494
+  }
+ ],
+ "qwen3-ha-v5-iq4xs": [
+  {
+   "prefill_tok": 1507,
+   "prefill_s": 32.154793,
+   "gen_tok": 27,
+   "gen_s": 3.591592,
+   "total_s": 39.66218543052673
+  },
+  {
+   "prefill_tok": 1506,
+   "prefill_s": 32.28662,
+   "gen_tok": 27,
+   "gen_s": 3.65428,
+   "total_s": 39.59400129318237
+  },
+  {
+   "prefill_tok": 1506,
+   "prefill_s": 32.387212,
+   "gen_tok": 27,
+   "gen_s": 3.643968,
+   "total_s": 39.43403673171997
+  },
+  {
+   "prefill_tok": 1507,
+   "prefill_s": 32.347235,
+   "gen_tok": 27,
+   "gen_s": 3.844894,
+   "total_s": 39.59519648551941
+  },
+  {
+   "prefill_tok": 1506,
+   "prefill_s": 32.228787,
+   "gen_tok": 27,
+   "gen_s": 3.735628,
+   "total_s": 39.12066030502319
+  },
+  {
+   "prefill_tok": 1506,
+   "prefill_s": 32.328279,
+   "gen_tok": 27,
+   "gen_s": 3.711746,
+   "total_s": 38.93652081489563
+  }
+ ]
+}
