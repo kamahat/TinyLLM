@@ -1,5 +1,7 @@
 # 04 — Résultats
 
+Quantification : tous les LLM ci-dessous sont des GGUF quantifiés avec llama.cpp ; la colonne **Quantification** donne le format (Q4_K_M sauf mention contraire). Les modèles vocaux ont la précision indiquée dans leur propre tableau.
+
 Matériel : Intel Core i3-6100T (4 threads, AVX2), ~7 Go de RAM, **sans GPU** ; Ollama 0.40.x, GGUF Q4_K_M ; Whisper et Piper via le protocole Wyoming. Les CSV bruts sont dans [`../../results/`](../../results/). Les phrases du banc LLM sont dans [`../../data/benchmark_fr_92.json`](../../data/benchmark_fr_92.json) (noms d'appareils génériques dans la copie publiée ; les chiffres ci-dessous viennent de l'original, aux noms privés).
 
 > **Lire d'abord les limites** ([06](06-lecons-et-limites.md)) : une seule machine, le français uniquement, un banc de petite taille et de la **parole synthétique** pour la reconnaissance vocale.
@@ -8,14 +10,14 @@ Matériel : Intel Core i3-6100T (4 threads, AVX2), ~7 Go de RAM, **sans GPU** ; 
 
 92 ordres parlés synthétisés avec Piper (propre) et le même audio avec un bruit blanc ajouté à 15 dB de rapport signal/bruit. `WER` = taux d'erreur de mots. Latence = temps entre la fin de la parole et la transcription (le moteur en streaming reçoit l'audio à la cadence du temps réel, comme depuis un micro). La dernière colonne rejoue 46 phrases du banc dans le LLM de production en utilisant le texte **transcrit** au lieu du texte exact (référence avec le texte exact : 43/46, 93 %).
 
-| Moteur STT | WER, audio propre | WER, audio bruité (15 dB) | Latence après la fin de la parole | Facteur temps réel | Commandes correctes de bout en bout, propre / bruité |
-|---|---|---|---|---|---|
-| Whisper tiny-int8 + prompt de vocabulaire | 31,2 % | 45,4 % | 0,68 s | 0,38 | 35/46 (76 %) / – |
-| Whisper base-int8 + prompt de vocabulaire | 16,0 % | 24,4 % | 1,41 s | 0,79 | 40/46 (87 %) / – |
-| **Whisper small-int8 + prompt de vocabulaire (production)** | 6,5 % | 11,5 % | 3,04 s | 1,71 | 44/46 (96 %) / 43/46 (93 %) |
-| Whisper small-int8, sans prompt | 9,6 % | 13,5 % | 3,12 s | 1,75 | – / – |
-| Parakeet TDT 0,6B v3, int8 (sherpa-onnx) | 9,2 % | 9,0 % | 0,39 s | 0,22 | 42/46 (91 %) / 42/46 (91 %) |
-| **Zipformer FR en streaming, Kroko (sherpa-onnx)** | 11,7 % | 12,3 % | 0,12 s | 0,07 | 43/46 (93 %) / 43/46 (93 %) |
+| Moteur STT | Quantification | WER, audio propre | WER, audio bruité (15 dB) | Latence après la fin de la parole | Facteur temps réel | Commandes correctes de bout en bout, propre / bruité |
+|---|---|---|---|---|---|---|
+| Whisper tiny-int8 + prompt de vocabulaire | int8 (CTranslate2) | 31,2 % | 45,4 % | 0,68 s | 0,38 | 35/46 (76 %) / – |
+| Whisper base-int8 + prompt de vocabulaire | int8 (CTranslate2) | 16,0 % | 24,4 % | 1,41 s | 0,79 | 40/46 (87 %) / – |
+| **Whisper small-int8 + prompt de vocabulaire (production)** | int8 (CTranslate2) | 6,5 % | 11,5 % | 3,04 s | 1,71 | 44/46 (96 %) / 43/46 (93 %) |
+| Whisper small-int8, sans prompt | int8 (CTranslate2) | 9,6 % | 13,5 % | 3,12 s | 1,75 | – / – |
+| Parakeet TDT 0,6B v3, int8 (sherpa-onnx) | int8 (ONNX) | 9,2 % | 9,0 % | 0,39 s | 0,22 | 42/46 (91 %) / 42/46 (91 %) |
+| **Zipformer FR en streaming, Kroko (sherpa-onnx)** | non précisée (ONNX) | 11,7 % | 12,3 % | 0,12 s | 0,07 | 43/46 (93 %) / 43/46 (93 %) |
 
 **Constats**
 - **La latence de Whisper est un coût fixe.** Elle reste autour de 3 s (écart-type 0,1 s) quelle que soit la durée de la phrase (0,9 à 2,8 s), parce que faster-whisper complète chaque phrase à une **fenêtre de 30 secondes** avant l'encodage. Sur ce CPU, `small` met donc ~3 s même pour une commande d'un mot. Les plus petits modèles Whisper sont plus rapides mais pas assez précis (31 % et 16 % de WER).
@@ -38,13 +40,13 @@ La synthèse est l'étape la moins chère : une réponse est prête en **moins d
 
 Banc français, premier appel d'outil (92 phrases), prompts de 2 500 tokens :
 
-| Étape | Résultat | Ordres sans appel d'outil | Latence moyenne | Tokens de prompt |
-|---|---|---|---|---|
-| Qwen3-1.7B d origine (Q4_K_M) | 17/92 (18 %) | 72/76 | 5,8 s | 2540 |
-| v1 LoRA, prompt complet | 88/92 (96 %) | 0/76 | 7,2 s | 2537 |
-| v1 LoRA + RAG dans le message utilisateur (31 phrases) | 26/31 (84 %) | 0/25 | 7,5 s | 1896 |
-| v1, requête exacte du framework | 86/92 (93 %) | 2/76 | 6,9 s | 2528 |
-| v2, requête exacte du framework | 87/92 (95 %) | 2/76 | 7,1 s | 2528 |
+| Étape | Quantification | Résultat | Ordres sans appel d'outil | Latence moyenne | Tokens de prompt |
+|---|---|---|---|---|---|
+| Qwen3-1.7B d origine (Q4_K_M) | Q4_K_M | 17/92 (18 %) | 72/76 | 5,8 s | 2540 |
+| v1 LoRA, prompt complet | Q4_K_M | 88/92 (96 %) | 0/76 | 7,2 s | 2537 |
+| v1 LoRA + RAG dans le message utilisateur (31 phrases) | Q4_K_M | 26/31 (84 %) | 0/25 | 7,5 s | 1896 |
+| v1, requête exacte du framework | Q4_K_M | 86/92 (93 %) | 2/76 | 6,9 s | 2528 |
+| v2, requête exacte du framework | Q4_K_M | 87/92 (95 %) | 2/76 | 7,1 s | 2528 |
 
 L'affinage fait passer un modèle de 1,7 Md de paramètres de **18 % à 96 %**. « Requête exacte du framework » est la vraie requête capturée dans Home Assistant (le banc précédent utilisait une approximation et flattait le modèle).
 
@@ -52,15 +54,15 @@ L'affinage fait passer un modèle de 1,7 Md de paramètres de **18 % à 96 %**. 
 
 Banc au prompt de la tablette (46 phrases ; avec historique = tours précédents rejoués ; adverses = capteurs indisponibles et appareils inexistants ; fausse confirmation = le modèle dit « fait » alors que l'outil a renvoyé une erreur) :
 
-| Modèle / format | Sans historique | Avec historique | Ordres sans appel (historique) | Adverses | Fausses confirmations après erreur | Latence moyenne | Taille du fichier |
-|---|---|---|---|---|---|---|---|
-| Qwen3-1.7B v2 (prompt du framework, ~3 000 tokens) | 43/46 (93 %) | 36/46 (78 %) | 7/38 | 6/6 (100 %) | n/a (boucles : 0) | 7,1 s | 1,1 Go |
-| Qwen3-1.7B v3 (prompt du framework, ~3 000 tokens) | 43/46 (93 %) | 39/46 (85 %) | 2/38 | 6/6 (100 %) | n/a (boucles : 0) | 7,8 s | 1,1 Go |
-| Qwen3-1.7B v4c (compact, ~1 330 tokens) | 44/46 (96 %) | 42/46 (91 %) | 1/38 | 6/6 (100 %) | 0/33 | 5,0 s | 1,1 Go |
-| CroissantLLM 1,3B v4c (tokenisation HF, INVALIDE) | 17/46 (37 %) | 17/46 (37 %) | 0/38 | 0/6 (0 %) | 0/30 | 5,0 s | 0,87 Go |
-| CroissantLLM 1,3B v4d (tokenisation llama.cpp) | 42/46 (91 %) | 39/46 (85 %) | 1/38 | 6/6 (100 %) | 0/34 | 4,9 s | 0,87 Go |
-| **Qwen3-1.7B v5 (compact + web) — en production** | 43/46 (93 %) | 44/46 (96 %) | 1/38 | 6/6 (100 %) | 0/33 | 4,8 s | 1,1 Go |
-| Qwen3-0.6B v5 (compact + web) | 43/46 (93 %) | 42/46 (91 %) | 1/38 | 6/6 (100 %) | 0/33 | 2,9 s | 0,40 Go |
+| Modèle / format | Quantification | Sans historique | Avec historique | Ordres sans appel (historique) | Adverses | Fausses confirmations après erreur | Latence moyenne | Taille du fichier |
+|---|---|---|---|---|---|---|---|---|
+| Qwen3-1.7B v2 (prompt du framework, ~3 000 tokens) | Q4_K_M | 43/46 (93 %) | 36/46 (78 %) | 7/38 | 6/6 (100 %) | n/a (boucles : 0) | 7,1 s | 1,1 Go |
+| Qwen3-1.7B v3 (prompt du framework, ~3 000 tokens) | Q4_K_M | 43/46 (93 %) | 39/46 (85 %) | 2/38 | 6/6 (100 %) | n/a (boucles : 0) | 7,8 s | 1,1 Go |
+| Qwen3-1.7B v4c (compact, ~1 330 tokens) | Q4_K_M | 44/46 (96 %) | 42/46 (91 %) | 1/38 | 6/6 (100 %) | 0/33 | 5,0 s | 1,1 Go |
+| CroissantLLM 1,3B v4c (tokenisation HF, INVALIDE) | Q4_K_M | 17/46 (37 %) | 17/46 (37 %) | 0/38 | 0/6 (0 %) | 0/30 | 5,0 s | 0,87 Go |
+| CroissantLLM 1,3B v4d (tokenisation llama.cpp) | Q4_K_M | 42/46 (91 %) | 39/46 (85 %) | 1/38 | 6/6 (100 %) | 0/34 | 4,9 s | 0,87 Go |
+| **Qwen3-1.7B v5 (compact + web) — en production** | Q4_K_M | 43/46 (93 %) | 44/46 (96 %) | 1/38 | 6/6 (100 %) | 0/33 | 4,8 s | 1,1 Go |
+| Qwen3-0.6B v5 (compact + web) | Q4_K_M | 43/46 (93 %) | 42/46 (91 %) | 1/38 | 6/6 (100 %) | 0/33 | 2,9 s | 0,40 Go |
 
 **Constats**
 - Le **prompt compact + proxy** est le gain principal : le même Qwen3-1.7B passe de 93 %/85 % (prompt du framework, v3) à **96 %/91 %** (v4c), avec un prompt 2,3 fois plus petit et une réponse plus rapide (5,0 s au lieu de 7,8 s).
@@ -72,6 +74,7 @@ Banc au prompt de la tablette (46 phrases ; avec historique = tours précédents
 
 | Mesure | Qwen3-1.7B v5 | Qwen3-0.6B v5 |
 |---|---|---|
+| **Quantification** | Q4_K_M | Q4_K_M |
 | Appel d'outil correct, sans / avec historique | 93 % / 96 % | 93 % / 91 % |
 | Adverses, erreur forcée | 6/6, 32/34 | 6/6, 32/34 |
 | Phrases pièges ayant déclenché un appel d'outil | 0/5 | 1/5 (un appareil inexistant : le framework a renvoyé une erreur) |
@@ -86,11 +89,11 @@ Le 0,6B choisit le bon outil mais **formule mal la confirmation** (il dit « app
 
 ## 4. Recherche web (Qwen3-1.7B v5, SearXNG local)
 
-| Modèle, réglage des extraits | Routage | Faux déclenchements | Justesse : météo / trajet / horaires | Requêtes réelles | Latence |
-|---|---|---|---|---|---|
-| **1,7B, 4 résultats x 230 caractères (production)** | 105/105 | 0/10 général, 0/8 maison | 38/38, 22/22, 19/23 | 15/22 | 16,5 s |
-| 1,7B, 3 résultats x 170 caractères | 105/105 | 0/10, 0/8 | 29/38, 19/22, 15/23 | 13/22 | 13,7 s |
-| 0,6B, 4 x 230 | 105/105 | 0/10, 0/8 | 38/38, 22/22, 19/23 | 10/22 | 9,0 s |
+| Modèle, réglage des extraits | Quantification | Routage | Faux déclenchements | Justesse : météo / trajet / horaires | Requêtes réelles | Latence |
+|---|---|---|---|---|---|---|
+| **1,7B, 4 résultats x 230 caractères (production)** | Q4_K_M | 105/105 | 0/10 général, 0/8 maison | 38/38, 22/22, 19/23 | 15/22 | 16,5 s |
+| 1,7B, 3 résultats x 170 caractères | Q4_K_M | 105/105 | 0/10, 0/8 | 29/38, 19/22, 15/23 | 13/22 | 13,7 s |
+| 0,6B, 4 x 230 | Q4_K_M | 105/105 | 0/10, 0/8 | 38/38, 22/22, 19/23 | 10/22 | 9,0 s |
 
 Des extraits plus courts vont plus vite mais sont nettement moins justes : non retenu. Un chiffre absent des extraits n'est **jamais** énoncé : une version initiale répondait « 3 100 km » pour une paire de villes (les extraits n'avaient pas de distance) puis « 31 000 km » (un code postal lu comme une distance) ; le garde-fou `grounded` répond désormais « Je n'ai pas trouvé de réponse fiable. »
 
