@@ -7,7 +7,7 @@ D = "/opt/tinyllm/data/"
 ap = argparse.ArgumentParser()
 ap.add_argument("--host", default="http://localhost:11434"); ap.add_argument("--model", required=True); ap.add_argument("--kind", required=True); ap.add_argument("--out", required=True)
 ap.add_argument("--ctx", type=int, default=4096); ap.add_argument("--every", type=int, default=1); ap.add_argument("--cats", default=""); ap.add_argument("--hist", default="none")
-ap.add_argument("--force-error", action="store_true"); ap.add_argument("--adv", action="store_true"); ap.add_argument("--real", default=D + "ha_tablet_prompt.json"); ap.add_argument("--recette", default=D + "benchmark_fr_92.json")
+ap.add_argument("--force-error", action="store_true"); ap.add_argument("--adv", action="store_true"); ap.add_argument("--real", default=D + "ha_tablet_prompt.json"); ap.add_argument("--recette", default=D + "recette.json")
 a = ap.parse_args(); R = json.load(open(a.recette)); REAL = json.load(open(a.real)); SYSTEM = REAL["system"]; TOOLS = REAL["tools"]
 def norm(s):
     s = unicodedata.normalize("NFD", str(s).lower()); s = "".join(c for c in s if unicodedata.category(c) != "Mn"); return " ".join(re.sub(r"[^a-z0-9 ]+", " ", s).split())
@@ -33,7 +33,7 @@ def live_text():
 INFO = {"dehors": ["22"], "douche": ["51"], "quelqu": ["oui", "quelqu"], "météo": ["nuageux"], "lumière du salon est": ["non", "éteint"], "volets du salon sont": ["oui", "ouvert"], "cuisine est allumée": ["oui", "allum"]}
 REFUS = re.compile(r"(pas|ne .{0,20}trouve|désolé|impossible|échou|n.ai pas|ne connais|erreur)", re.I)
 def gen(msgs, tools):
-    p = render(msgs, tools, True, a.kind); body = {"model": a.model, "prompt": p, "raw": True, "stream": False, "keep_alive": -1, "options": {"temperature": 0, "num_predict": 160, "num_ctx": a.ctx, "stop": ["<|im_end|>"]}}
+    p = render(msgs, tools, True, a.kind); body = {"model": a.model, "prompt": p, "raw": True, "stream": False, "keep_alive": -1, "options": {"temperature": 0, "num_predict": 160, "num_ctx": a.ctx, "stop": [stop_token(a.kind)]}}
     t = time.time(); r = json.loads(urllib.request.urlopen(urllib.request.Request(a.host + "/api/generate", data=json.dumps(body).encode(), headers={"Content-Type": "application/json"}), timeout=900).read())
     return r, time.time() - t
 def val_ok(exp, act):

@@ -10,14 +10,12 @@ Matériel : Intel Core i3-6100T (4 threads, AVX2), ~7 Go de RAM, **sans GPU** ; 
 
 92 ordres parlés synthétisés avec Piper (propre) et le même audio avec un bruit blanc ajouté à 15 dB de rapport signal/bruit. `WER` = taux d'erreur de mots. Latence = temps entre la fin de la parole et la transcription (le moteur en streaming reçoit l'audio à la cadence du temps réel, comme depuis un micro). La dernière colonne rejoue 46 phrases du banc dans le LLM de production en utilisant le texte **transcrit** au lieu du texte exact (référence avec le texte exact : 43/46, 93 %).
 
-| Moteur STT | Quantification | WER, audio propre | WER, audio bruité (15 dB) | Latence après la fin de la parole | Facteur temps réel | Commandes correctes de bout en bout, propre / bruité |
+| Configuration Whisper | WER, audio propre | Phrases exactes (sur 92) | WER, audio bruité (15 dB) | Phrases exactes (sur 92) | Latence après la fin de la parole | Facteur temps réel |
 |---|---|---|---|---|---|---|
-| Whisper tiny-int8 + prompt de vocabulaire | int8 (CTranslate2) | 31,2 % | 45,4 % | 0,68 s | 0,38 | 35/46 (76 %) / – |
-| Whisper base-int8 + prompt de vocabulaire | int8 (CTranslate2) | 16,0 % | 24,4 % | 1,41 s | 0,79 | 40/46 (87 %) / – |
-| **Whisper small-int8 + prompt de vocabulaire (production)** | int8 (CTranslate2) | 6,5 % | 11,5 % | 3,04 s | 1,71 | 44/46 (96 %) / 43/46 (93 %) |
-| Whisper small-int8, sans prompt | int8 (CTranslate2) | 9,6 % | 13,5 % | 3,12 s | 1,75 | – / – |
-| Parakeet TDT 0,6B v3, int8 (sherpa-onnx) | int8 (ONNX) | 9,2 % | 9,0 % | 0,39 s | 0,22 | 42/46 (91 %) / 42/46 (91 %) |
-| **Zipformer FR en streaming, Kroko (sherpa-onnx)** | non précisée (ONNX) | 11,7 % | 12,3 % | 0,12 s | 0,07 | 43/46 (93 %) / 43/46 (93 %) |
+| tiny-int8 + prompt de vocabulaire | 31,2 % | 26 | 45,4 % | 11 | 0,68 s | 0,38 |
+| base-int8 + prompt de vocabulaire | 16,0 % | 41 | 24,4 % | 26 | 1,41 s | 0,79 |
+| **small-int8 + prompt de vocabulaire (production)** | 6,5 % | 68 | 11,5 % | 57 | 3,04 s | 1,71 |
+| small-int8, sans prompt | 9,6 % | 59 | 13,5 % | 49 | 3,12 s | 1,75 |
 
 **Constats**
 - **La latence de Whisper est un coût fixe.** Elle reste autour de 3 s (écart-type 0,1 s) quelle que soit la durée de la phrase (0,9 à 2,8 s), parce que faster-whisper complète chaque phrase à une **fenêtre de 30 secondes** avant l'encodage. Sur ce CPU, `small` met donc ~3 s même pour une commande d'un mot. Les plus petits modèles Whisper sont plus rapides mais pas assez précis (31 % et 16 % de WER).
@@ -68,6 +66,7 @@ Banc au prompt de la tablette (46 phrases ; avec historique = tours précédents
 | Qwen3-0.6B v5 (compact + web) | Q8_0 | 43/46 (93 %) | 42/46 (91 %) | 1/38 | 6/6 (100 %) | 0/33 | 3,3 s | 0,64 Go |
 | Qwen3-1.7B v5 (compact + web) | Q4_K_M (imatrix) | 45/46 (98 %) | 43/46 (93 %) | 1/38 | 6/6 (100 %) | 0/33 | 4,9 s | 1,1 Go |
 | Qwen3-1.7B v5 (compact + web) | IQ4_XS (imatrix) | 44/46 (96 %) | 42/46 (91 %) | 1/38 | 6/6 (100 %) | 0/33 | 4,9 s | 1,0 Go |
+| Gemma 3 1B v5 (compact + web) | Q4_K_M | 41/46 (89 %) | 40/46 (87 %) | 0/38 | 6/6 (100 %) | 0/34 | 3,1 s | 0,81 Go |
 
 **Constats**
 - Le **prompt compact + proxy** est le gain principal : le même Qwen3-1.7B passe de 93 %/85 % (prompt du framework, v3) à **96 %/91 %** (v4c), avec un prompt 2,3 fois plus petit et une réponse plus rapide (5,0 s au lieu de 7,8 s).
@@ -91,6 +90,34 @@ Banc au prompt de la tablette (46 phrases ; avec historique = tours précédents
 | Taille du fichier / mémoire chargée | 1,1 Go / 1,6 Go | 0,4 Go / 0,9 Go |
 
 Le 0,6B choisit le bon outil mais **formule mal la confirmation** (il dit « appareil introuvable » après un succès dans 61 % des ordres) ; seul un garde-fou déterministe le masque. C'est un **choix viable si la latence prime**, pas le choix par défaut.
+
+### Gemma 3 1B contre Qwen3-1,7B (même recette, v5)
+
+Mêmes données d'entraînement et mêmes hyperparamètres (LoRA r=32, 1 époque), une autre famille de modèles : **Gemma 3 1B** (Q4_K_M, 806 Mo). Gemma n'a ni rôle système ni rôle outil : le prompt système et la liste d'outils sont fusionnés dans le premier tour utilisateur (préfixe stable, donc le cache de prompt fonctionne toujours). Mêmes bancs, même instance de test isolée ; la production n'est pas touchée.
+
+| Mesure | Qwen3-1,7B v5 | Gemma 3 1B v5 |
+|---|---|---|
+| **Quantification** | Q4_K_M | Q4_K_M |
+| Taille du fichier | 1 107 Mo | **806 Mo** |
+| Bon appel d'outil, sans historique / avec historique | 93 % / 96 % | 89 % / 87 % |
+| Adverses, erreur forcée | 6/6, 32/34 | 6/6, **34/34** |
+| Phrases pièges ayant déclenché un appel d'outil (sur 8) | 0 | 3 |
+| **Refus à tort après une commande réussie** (avant la garde), sans historique / avec historique | 2/35 · 5/36 | 15/36 · 13/35 |
+| … masqués par la garde `guard_success` | 2/2 et 3/5 | 15/15 et 13/13 |
+| Génération d'une commande | 4,8 s | **3,1 s** |
+| Question web (deux générations + recherche) | 16,5 s | **8,6 s** |
+| Réponses web, requêtes réelles | 15/22 | 13/22 |
+| Traitement du prompt (prompt froid de 1 500 tokens) | 45,1 tok/s | **62,2 tok/s** (+38 %) |
+| Décodage | 7,0 tok/s | **14,9 tok/s** (×2,1) |
+| Essai à froid, chargement du modèle compris | 41,8 s | **28,2 s** |
+
+**Constats**
+- **Gemma est nettement plus rapide et plus petit** : décodage deux fois plus rapide, traitement du prompt +38 %, une question web en moitié moins de temps, fichier 27 % plus petit.
+- **Il est moins précis sur les ordres** : −4 points sans historique, −9 avec historique, et trois phrases pièges (« Éteins la télé du salon »…) déclenchent un appel d'outil sur un appareil inexistant (le framework répond par une erreur, aucun autre appareil n'est touché). Il est meilleur sur le test d'erreur forcée (34/34) et ne confirme jamais après une erreur.
+- **Il formule mal les confirmations** : après 28 commandes réussies, il a dit « Je n'ai pas trouvé cet appareil ». Les 28 sont rattrapés par la garde `guard_success`, et le proxy de production saute de toute façon la seconde génération après un ordre réussi : cette faiblesse n'atteint donc presque jamais l'utilisateur.
+- **Comparé à Qwen3-0,6B** (même classe de latence, 2,9 s, 93 % / 91 %, 0,4 Go), Gemma 3 1B n'est **ni plus précis ni plus petit** ; il est seulement meilleur sur les erreurs forcées (34/34 contre 32/34) et sur les réponses web réelles (13/22 contre 10/22).
+- **Verdict : non retenu.** Qwen3-1,7B reste en production ; Gemma 3 1B ne serait une option « plus rapide » viable que si son comportement sur les phrases pièges était corrigé avec davantage de données. Un seul essai, une époque, une recette réglée sur Qwen : un écart d'une ou deux phrases est du bruit.
+- **Piège rencontré en chemin** : après la fusion du LoRA, le dossier exporté avait perdu les fichiers de jetons spéciaux du tokenizer de base ; le GGUF découpait `<start_of_turn>` en texte ordinaire (+12 tokens) et le modèle demandait « Dans quelle pièce ? » au lieu d'appeler un outil. Voir les [leçons](06-lecons-et-limites.md).
 
 ## 4. Recherche web (Qwen3-1.7B v5, SearXNG local)
 

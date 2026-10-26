@@ -10,14 +10,12 @@ Hardware: Intel Core i3-6100T (4 threads, AVX2), ~7 GB RAM, **no GPU**; Ollama 0
 
 92 spoken commands synthesized with Piper (clean) and the same audio with white noise added at 15 dB signal-to-noise ratio. `WER` = word error rate. Latency = time between the end of the speech and the transcript (the streaming engine receives the audio at real-time pace, as from a microphone). The last column replays 46 of the benchmark phrases through the production LLM using the **transcribed** text instead of the exact text (reference with the exact text: 43/46, 93 %).
 
-| STT engine | Quantization | WER, clean audio | WER, noisy audio (15 dB) | Latency after speech ends | Real-time factor | Correct commands end to end, clean / noisy |
+| Whisper configuration | WER, clean audio | Exact sentences (of 92) | WER, noisy audio (15 dB) | Exact sentences (of 92) | Latency after speech ends | Real-time factor |
 |---|---|---|---|---|---|---|
-| Whisper tiny-int8 + vocabulary prompt | int8 (CTranslate2) | 31.2 % | 45.4 % | 0.68 s | 0.38 | 35/46 (76 %) / – |
-| Whisper base-int8 + vocabulary prompt | int8 (CTranslate2) | 16.0 % | 24.4 % | 1.41 s | 0.79 | 40/46 (87 %) / – |
-| **Whisper small-int8 + vocabulary prompt (production)** | int8 (CTranslate2) | 6.5 % | 11.5 % | 3.04 s | 1.71 | 44/46 (96 %) / 43/46 (93 %) |
-| Whisper small-int8, no prompt | int8 (CTranslate2) | 9.6 % | 13.5 % | 3.12 s | 1.75 | – / – |
-| Parakeet TDT 0.6B v3, int8 (sherpa-onnx) | int8 (ONNX) | 9.2 % | 9.0 % | 0.39 s | 0.22 | 42/46 (91 %) / 42/46 (91 %) |
-| **Streaming Zipformer FR, Kroko (sherpa-onnx)** | not specified (ONNX) | 11.7 % | 12.3 % | 0.12 s | 0.07 | 43/46 (93 %) / 43/46 (93 %) |
+| tiny-int8 + vocabulary prompt | 31.2 % | 26 | 45.4 % | 11 | 0.68 s | 0.38 |
+| base-int8 + vocabulary prompt | 16.0 % | 41 | 24.4 % | 26 | 1.41 s | 0.79 |
+| **small-int8 + vocabulary prompt (production)** | 6.5 % | 68 | 11.5 % | 57 | 3.04 s | 1.71 |
+| small-int8, no prompt | 9.6 % | 59 | 13.5 % | 49 | 3.12 s | 1.75 |
 
 **Findings**
 - **Whisper's latency is a fixed cost.** It stays at about 3 s (standard deviation 0.1 s) whatever the length of the utterance (0.9 to 2.8 s), because faster-whisper pads every utterance to a **30-second window** before encoding. On this CPU, `small` therefore needs ~3 s even for a one-word command. Smaller Whisper models are faster but not accurate enough (31 % and 16 % WER).
@@ -68,6 +66,7 @@ Tablet-prompt benchmark (46 phrases; with history = previous turns replayed; adv
 | Qwen3-0.6B v5 (compact + web) | Q8_0 | 43/46 (93 %) | 42/46 (91 %) | 1/38 | 6/6 (100 %) | 0/33 | 3.3 s | 0.64 GB |
 | Qwen3-1.7B v5 (compact + web) | Q4_K_M (imatrix) | 45/46 (98 %) | 43/46 (93 %) | 1/38 | 6/6 (100 %) | 0/33 | 4.9 s | 1.1 GB |
 | Qwen3-1.7B v5 (compact + web) | IQ4_XS (imatrix) | 44/46 (96 %) | 42/46 (91 %) | 1/38 | 6/6 (100 %) | 0/33 | 4.9 s | 1.0 GB |
+| Gemma 3 1B v5 (compact + web) | Q4_K_M | 41/46 (89 %) | 40/46 (87 %) | 0/38 | 6/6 (100 %) | 0/34 | 3.1 s | 0.81 GB |
 
 **Findings**
 - The **compact prompt + proxy** is the main gain: the same Qwen3-1.7B goes from 93 %/85 % (framework prompt, v3) to **96 %/91 %** (v4c), with a prompt 2.3 times smaller and a faster answer (5.0 s instead of 7.8 s).
@@ -91,6 +90,34 @@ Tablet-prompt benchmark (46 phrases; with history = previous turns replayed; adv
 | File size / memory when loaded | 1.1 GB / 1.6 GB | 0.4 GB / 0.9 GB |
 
 The 0.6B chooses the right tool but **words the confirmation badly** (it says "device not found" after a success in 61 % of commands); only a deterministic guard-rail masks it. It is a **viable choice if latency dominates**, not the default.
+
+### Gemma 3 1B versus Qwen3-1.7B (same recipe, v5)
+
+Same training data and hyperparameters (LoRA r=32, 1 epoch), a different model family: **Gemma 3 1B** (Q4_K_M, 806 MB). Gemma has no system or tool role, so the system prompt and the tool list are merged into the first user turn (stable prefix, so the prompt cache still works). Same benchmarks, same isolated test instance; production untouched.
+
+| Measure | Qwen3-1.7B v5 | Gemma 3 1B v5 |
+|---|---|---|
+| **Quantization** | Q4_K_M | Q4_K_M |
+| File size | 1,107 MB | **806 MB** |
+| Correct tool call, no history / history | 93 % / 96 % | 89 % / 87 % |
+| Adversarial, forced error | 6/6, 32/34 | 6/6, **34/34** |
+| Trap phrases that triggered a tool call (of 8) | 0 | 3 |
+| **Spurious refusal after a successful command** (before the guard-rail), no history / history | 2/35 · 5/36 | 15/36 · 13/35 |
+| … masked by the `guard_success` guard-rail | 2/2 and 3/5 | 15/15 and 13/13 |
+| Generation of one command | 4.8 s | **3.1 s** |
+| Web question (two generations + search) | 16.5 s | **8.6 s** |
+| Web answers, real queries | 15/22 | 13/22 |
+| Prompt processing (cold 1,500-token prompt) | 45.1 tok/s | **62.2 tok/s** (+38 %) |
+| Decoding | 7.0 tok/s | **14.9 tok/s** (2.1×) |
+| Cold run, model load included | 41.8 s | **28.2 s** |
+
+**Findings**
+- **Gemma is clearly faster and smaller**: decoding is twice as fast, prompt processing 38 % faster, a web question takes half the time, and the file is 27 % smaller.
+- **It is less accurate on orders**: −4 points without history, −9 with history, and three trap phrases ("Éteins la télé du salon"…) trigger a tool call on a non-existent device (the framework answers with an error and no other device is touched). It is better on the forced-error test (34/34) and never confirms after an error.
+- **It words confirmations badly**: after 28 successful commands it said "I did not find this device". All 28 are caught by the `guard_success` guard-rail, and the production proxy skips the second generation after a successful order anyway, so this weakness mostly does not reach the user.
+- **Compared with Qwen3-0.6B** (same latency class, 2.9 s, 93 % / 91 %, 0.4 GB), Gemma 3 1B is **not more accurate and not smaller**; it is only better on forced errors (34/34 against 32/34) and on real web answers (13/22 against 10/22).
+- **Verdict: not adopted.** Qwen3-1.7B stays in production; Gemma 3 1B would be a viable "faster" option only if its trap-phrase behaviour were fixed with more training data. One run, one epoch, a recipe tuned on Qwen: differences of one or two phrases are noise.
+- **Pitfall found on the way**: after merging the LoRA, the exported folder had lost the base tokenizer's special-token files, so the GGUF split `<start_of_turn>` into plain text (+12 tokens) and the model asked "Which room?" instead of calling a tool. See [lessons](06-lessons-and-limits.md).
 
 ## 4. Web search (Qwen3-1.7B v5, local SearXNG)
 

@@ -23,19 +23,20 @@ def tools_for(ex):
 def base_msgs(ex): return [{"role": "system", "content": ex["system"]}] + ex["hist"] + [{"role": "user", "content": ex["user"]}]
 def pair(ex, turn2):
     m = base_msgs(ex)
-    if not turn2: return render(m, tools_for(ex), True, a.kind), (call_text(ex["steps"][0]["tool"], ex["steps"][0]["args"]) if ex["steps"] else ex["final"]) + "<|im_end|>"
+    if not turn2: return render(m, tools_for(ex), True, a.kind), (call_text(ex["steps"][0]["tool"], ex["steps"][0]["args"]) if ex["steps"] else ex["final"]) + stop_token(a.kind)
     for s in ex["steps"]:
         m.append({"role": "assistant", "content": "", "tool_calls": [{"function": {"name": s["tool"], "arguments": s["args"]}}]}); m.append({"role": "tool", "content": s["result"]})
-    return render(m, tools_for(ex), True, a.kind), ex["final"] + "<|im_end|>"
+    return render(m, tools_for(ex), True, a.kind), ex["final"] + stop_token(a.kind)
 multi = [e for e in rows if e["steps"]]; prio = [e for e in multi if e["cat"] in ("piege-erreur", "echec", "info", "web")]; rest = [e for e in multi if e["cat"] not in ("piege-erreur", "echec", "info", "web")]
 random.shuffle(prio); random.shuffle(rest); t2 = (prio + rest)[: a.n2]; random.shuffle(rows); t1 = rows[: a.n1]
+BOS = [tok.bos_token_id] if a.kind == "gemma" else []   # Gemma : BOS ajoute par llama.cpp a l inference -> meme sequence a l entrainement
 pairs = [pair(e, False) for e in t1] + [pair(e, True) for e in t2]; exs = []
 for p, c in pairs:
-    pi = enc(p); ci = enc(c)
+    pi = BOS + enc(p); ci = enc(c)
     if len(pi) + len(ci) <= a.maxlen: exs.append((pi, ci))
 print("echantillons:", len(exs), "/", len(pairs), "| tokens moyens:", sum(len(p) + len(c) for p, c in exs) // len(exs), "| max:", max(len(p) + len(c) for p, c in exs), flush=True)
 print("exemple tour 2 :", pairs[-1][0][-300:].replace(chr(10), " / "), "-->", pairs[-1][1], flush=True)
-model = AutoModelForCausalLM.from_pretrained(a.base, dtype=torch.bfloat16, device_map={"": 0}, attn_implementation="sdpa"); model.gradient_checkpointing_enable(); model.enable_input_require_grads()
+model = AutoModelForCausalLM.from_pretrained(a.base, dtype=torch.bfloat16, device_map={"": 0}, attn_implementation=("eager" if a.kind == "gemma" else "sdpa")); model.gradient_checkpointing_enable(); model.enable_input_require_grads()
 model = get_peft_model(model, LoraConfig(r=a.r, lora_alpha=2 * a.r, lora_dropout=0.05, target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"], task_type="CAUSAL_LM"))
 steps = max(1, int(len(exs) * a.epochs / a.accum)); opt = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=a.lr, weight_decay=0.0)
 sch = get_cosine_schedule_with_warmup(opt, int(0.05 * steps), steps); model.train(); t0 = time.time(); step = micro = n = 0; run = 0.0; order = []

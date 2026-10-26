@@ -55,6 +55,23 @@ llama-quantize --imatrix imatrix.dat f16.gguf q4_k_m_im.gguf Q4_K_M
 
 Importez chaque variante dans une **instance Ollama de test séparée** (autre port) et lancez `scripts/bench/quant_tests.sh MODELE ETIQUETTE`, pour ne jamais évincer le modèle de production.
 
+## 7. Autre famille de modèles : Gemma 3 (optionnel)
+
+```bash
+# mêmes données et même recette, format de prompt Gemma 3 (système + outils fusionnés dans le premier tour utilisateur)
+python3 scripts/training/train_v4c.py --base unsloth/gemma-3-1b-it --kind gemma --out models/gemma3-1b-ha-v5 --n1 2400 --n2 1500 --epochs 1
+# IMPORTANT : copier les fichiers du tokenizer de BASE (tokenizer.json, tokenizer.model, tokenizer_config.json,
+# special_tokens_map.json, added_tokens.json) dans models/gemma3-1b-ha-v5/merged AVANT de convertir
+python3 convert_hf_to_gguf.py models/gemma3-1b-ha-v5/merged --outfile f16.gguf --outtype f16
+llama-quantize f16.gguf q4_k_m.gguf Q4_K_M
+# Modelfile : FROM ./q4_k_m.gguf, PARAMETER stop <end_of_turn>, PARAMETER num_ctx 4096
+# sur l'instance de test
+KIND=gemma scripts/bench/quant_tests.sh mon-modele-gemma gemma3
+python3 scripts/bench/speed_bench.py mon-modele-gemma@gemma mon-modele-qwen     # NOM@FORMAT, qwen par défaut
+```
+
+Avant de mesurer, vérifier que llama.cpp tokenise le vrai prompt comme le tokenizer d'entraînement (même nombre de tokens, `<start_of_turn>` est un seul token).
+
 ## Règles à conserver
 
 1. Un agent de développement **n'exécute jamais de vraies commandes** ; utilisez le proxy de simulation ou appelez directement le proxy en HTTP.

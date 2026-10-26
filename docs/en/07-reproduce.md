@@ -55,6 +55,23 @@ llama-quantize --imatrix imatrix.dat f16.gguf q4_k_m_im.gguf Q4_K_M
 
 Import each variant into a **separate test Ollama instance** (other port) and run `scripts/bench/quant_tests.sh MODEL TAG` so the production model is never evicted.
 
+## 7. Another model family: Gemma 3 (optional)
+
+```bash
+# same data and recipe, Gemma 3 prompt format (system + tools merged into the first user turn)
+python3 scripts/training/train_v4c.py --base unsloth/gemma-3-1b-it --kind gemma --out models/gemma3-1b-ha-v5 --n1 2400 --n2 1500 --epochs 1
+# IMPORTANT: copy the BASE tokenizer files (tokenizer.json, tokenizer.model, tokenizer_config.json,
+# special_tokens_map.json, added_tokens.json) into models/gemma3-1b-ha-v5/merged BEFORE converting
+python3 convert_hf_to_gguf.py models/gemma3-1b-ha-v5/merged --outfile f16.gguf --outtype f16
+llama-quantize f16.gguf q4_k_m.gguf Q4_K_M
+# Modelfile: FROM ./q4_k_m.gguf, PARAMETER stop <end_of_turn>, PARAMETER num_ctx 4096
+# on the test instance
+KIND=gemma scripts/bench/quant_tests.sh my-gemma-model gemma3
+python3 scripts/bench/speed_bench.py my-gemma-model@gemma my-qwen-model     # NAME@FORMAT, qwen by default
+```
+
+Before benchmarking, check that llama.cpp tokenizes the real prompt like the training tokenizer does (same token count, `<start_of_turn>` is a single token).
+
 ## Rules worth keeping
 
 1. A development agent **never executes real commands**; use the simulation proxy or call the proxy directly over HTTP.

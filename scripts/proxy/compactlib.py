@@ -68,8 +68,30 @@ TOOLHEAD = ("# Tools" + NL + NL + "You may call one or more functions to assist 
 TOOLTAIL = (NL + "</tools>" + NL + NL + "For each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:" + NL + "<tool_call>" + NL +
             "{" + chr(34) + "name" + chr(34) + ": <function-name>, " + chr(34) + "arguments" + chr(34) + ": <args-json-object>}" + NL + "</tool_call>")
 def call_text(name, args): return "<tool_call>" + NL + json.dumps({"name": name, "arguments": args}, ensure_ascii=False) + NL + "</tool_call>"
+STOP_TOKEN = {"qwen": "<|im_end|>", "croissant": "<|im_end|>", "gemma": "<end_of_turn>"}
+def stop_token(kind): return STOP_TOKEN.get(kind, "<|im_end|>")
+def render_gemma(messages, tools, gen=True):
+    """Format Gemma 3 : pas de role systeme ni outil -> le systeme et les outils sont fusionnes dans le PREMIER tour utilisateur (prefixe stable = cache), les resultats d outils sont un tour utilisateur
+    <tool_response>, les appels d outil du modele restent <tool_call>. Pas de BOS dans le texte : il est ajoute par le tokeniseur / llama.cpp."""
+    sysm = messages[0]["content"]
+    if tools: sysm += NL + NL + TOOLHEAD + NL.join(json.dumps(t, ensure_ascii=False, separators=(",", ":")) for t in tools) + TOOLTAIL
+    o = ""; first = True; E = "<end_of_turn>" + NL
+    for m in messages[1:]:
+        r = m["role"]
+        if r == "user":
+            o += "<start_of_turn>user" + NL + ((sysm + NL + NL) if first else "") + m["content"] + E; first = False
+        else:
+            if first: o += "<start_of_turn>user" + NL + sysm + E; first = False
+            if r == "assistant":
+                body = NL.join(call_text(c["function"]["name"], c["function"]["arguments"]) for c in m.get("tool_calls") or [])
+                o += "<start_of_turn>model" + NL + (m.get("content") or "") + ((NL if m.get("content") else "") + body if body else "") + E
+            elif r == "tool": o += "<start_of_turn>user" + NL + "<tool_response>" + NL + m["content"] + NL + "</tool_response>" + E
+    if first: o += "<start_of_turn>user" + NL + sysm + E
+    if gen: o += "<start_of_turn>model" + NL
+    return o
 def render(messages, tools, gen=True, kind="qwen"):
     """messages : [{role: system|user|assistant|tool, content, tool_calls?}] ; tools : liste compacte ou None"""
+    if kind == "gemma": return render_gemma(messages, tools, gen)
     sysm = messages[0]["content"]; o = "<|im_start|>system" + NL + sysm
     if tools: o += NL + NL + TOOLHEAD + NL.join(json.dumps(t, ensure_ascii=False, separators=(",", ":")) for t in tools) + TOOLTAIL
     o += "<|im_end|>" + NL
@@ -136,3 +158,62 @@ def guard_success(msgs, text):
     except Exception: return text
     if isinstance(r, dict) and (r.get("ok") is True or (r.get("success") is True and "result" not in r)): return "C est fait."
     return text
+
+# ---- confirmation directe (pas de 2e appel LLM apres un ordre reussi) ---------------------------------
+FAST_CONFIRM = os.environ.get("FAST_CONFIRM", "0") == "1"
+FAST_PHRASE = os.environ.get("FAST_CONFIRM_PHRASE", "C est fait.")
+ACTION_TOOLS = {"intent__HassTurnOn", "intent__HassTurnOff", "intent__HassSetPosition", "intent__HassStopMoving", "light__HassLightSet", "climate__HassClimateSetTemperature"}
+def fast_confirm(ha_messages):
+    """Messages HA bruts. Renvoie la phrase de confirmation si TOUS les appels du tour sont des outils d ACTION et que HA a repondu SUCCES complet
+    (response_type action_done, aucune cible en echec, au moins une cible reussie) ; sinon None (le LLM redige la reponse : lecture de liste, erreur, script, etc.)."""
+    if not FAST_CONFIRM: return None
+    users = [i for i, m in enumerate(ha_messages) if m["role"] == "user"]
+    if not users: return None
+    seg = ha_messages[users[-1] + 1:]
+    calls = [c for m in seg if m["role"] == "assistant" for c in (m.get("tool_calls") or [])]
+    tools = [m for m in seg if m["role"] == "tool"]
+    if not calls or len(calls) != len(tools): return None
+    if any(c["function"]["name"] not in ACTION_TOOLS for c in calls): return None
+    for t in tools:
+        try: r = json.loads(t["content"]) if isinstance(t["content"], str) else t["content"]
+        except Exception: return None
+        if not isinstance(r, dict) or r.get("response_type") != "action_done": return None
+        d = r.get("data") or {}
+        if d.get("failed") or not d.get("success"): return None
+    return FAST_PHRASE
+
+
+# ---- corrections STT : mots ou groupes de mots souvent mal entendus -> forme correcte ----------------------
+import unicodedata
+STT_FIXES_ENV = os.environ.get("STT_FIXES", "")            # "mal entendu=correct;autre=correct2"
+STT_FIXES_FILE = os.environ.get("STT_FIXES_FILE", "")      # JSON {"mal entendu": "correct"} : recharge a chaud (pas de redemarrage)
+_FIX = {"mtime": "?", "rules": []}
+def _tok_norm(w): return "".join(c for c in unicodedata.normalize("NFD", w.lower()) if unicodedata.category(c) != "Mn")
+def _tokens(text): return [(m.start(), m.end(), _tok_norm(m.group())) for m in re.finditer(r"[^\W_]+", text)]
+def _fix_rules():
+    mt = os.path.getmtime(STT_FIXES_FILE) if STT_FIXES_FILE and os.path.exists(STT_FIXES_FILE) else None
+    if _FIX["mtime"] == mt: return _FIX["rules"]          # rien n a change depuis la derniere lecture
+    rules = {}
+    for part in STT_FIXES_ENV.split(";"):
+        if "=" in part: a, b = part.split("=", 1); rules[a.strip()] = b.strip()
+    if mt is not None:
+        try: rules.update({k: v for k, v in json.load(open(STT_FIXES_FILE, encoding="utf-8")).items() if not k.startswith("_")})
+        except Exception: pass
+    comp = []
+    for k, v in rules.items():
+        kt = tuple(t for _, _, t in _tokens(k))
+        if kt and kt != tuple(t for _, _, t in _tokens(v)): comp.append((kt, v, k))
+    comp.sort(key=lambda x: -len(x[0])); _FIX["mtime"] = mt; _FIX["rules"] = comp
+    return comp
+def apply_stt_fixes(text):
+    """-> (texte corrige, notes). Insensible a la casse, aux accents et a la ponctuation ; le plus long motif gagne."""
+    rules = _fix_rules()
+    if not rules or not text: return text, []
+    toks = _tokens(text); out = []; notes = []; i = 0; last = 0
+    while i < len(toks):
+        hit = next(((n, v, k) for kt, v, k in rules for n in [len(kt)] if tuple(t for _, _, t in toks[i:i + n]) == kt), None)
+        if hit:
+            n, v, k = hit; out.append(text[last:toks[i][0]]); out.append(v); last = toks[i + n - 1][1]; notes.append("correction STT : « %s » -> « %s »" % (text[toks[i][0]:last].strip(), v)); i += n
+        else: i += 1
+    out.append(text[last:])
+    return "".join(out), notes

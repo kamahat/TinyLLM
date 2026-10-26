@@ -1,0 +1,90 @@
+{
+ "gemma3-ha-v5": [
+  {
+   "prefill_tok": 1508,
+   "prefill_s": 24.431508,
+   "gen_tok": 36,
+   "gen_s": 2.268743,
+   "total_s": 26.782922983169556
+  },
+  {
+   "prefill_tok": 1507,
+   "prefill_s": 24.305913,
+   "gen_tok": 36,
+   "gen_s": 2.416224,
+   "total_s": 28.358807802200317
+  },
+  {
+   "prefill_tok": 1505,
+   "prefill_s": 26.451816,
+   "gen_tok": 36,
+   "gen_s": 2.406531,
+   "total_s": 30.219721794128418
+  },
+  {
+   "prefill_tok": 1507,
+   "prefill_s": 23.843998,
+   "gen_tok": 36,
+   "gen_s": 2.421999,
+   "total_s": 28.920365810394287
+  },
+  {
+   "prefill_tok": 1507,
+   "prefill_s": 24.187516,
+   "gen_tok": 36,
+   "gen_s": 2.476861,
+   "total_s": 28.009238243103027
+  },
+  {
+   "prefill_tok": 1507,
+   "prefill_s": 24.127745,
+   "gen_tok": 36,
+   "gen_s": 2.304416,
+   "total_s": 27.78490662574768
+  }
+ ],
+ "qwen3-ha-v5-q4km": [
+  {
+   "prefill_tok": 1506,
+   "prefill_s": 33.434502,
+   "gen_tok": 27,
+   "gen_s": 3.817049,
+   "total_s": 41.90228605270386
+  },
+  {
+   "prefill_tok": 1505,
+   "prefill_s": 33.326398999,
+   "gen_tok": 27,
+   "gen_s": 4.020266,
+   "total_s": 42.033626317977905
+  },
+  {
+   "prefill_tok": 1506,
+   "prefill_s": 33.484165999,
+   "gen_tok": 27,
+   "gen_s": 3.676219,
+   "total_s": 41.328991651535034
+  },
+  {
+   "prefill_tok": 1504,
+   "prefill_s": 33.306103,
+   "gen_tok": 27,
+   "gen_s": 3.77583,
+   "total_s": 41.50763297080994
+  },
+  {
+   "prefill_tok": 1506,
+   "prefill_s": 33.765658,
+   "gen_tok": 27,
+   "gen_s": 4.099555999,
+   "total_s": 42.287596702575684
+  },
+  {
+   "prefill_tok": 1507,
+   "prefill_s": 33.439131999,
+   "gen_tok": 27,
+   "gen_s": 3.857439,
+   "total_s": 41.70713663101196
+  }
+ ]
+}

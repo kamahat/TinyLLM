@@ -2,12 +2,13 @@
 """Banc WEB : coeur du proxy (handle_chat) + faux moteur de recherche (extraits de l exemple) + Ollama brut. Mesure routage, justesse des reponses, faux declenchements. Aucun acces Internet reel, aucun ordre HA. Usage : harness5_web.py MODELE"""
 import os, sys, json, time, urllib.request, collections, statistics
 os.environ["COMPACT_WEB"] = "1"; os.environ["WEB_LOG"] = "/tmp/_h5_web.jsonl"
-sys.path.insert(0, "/opt/tinyllm/compact"); model = sys.argv[1]; sys.argv = ["x", "--kind", "qwen"]
+sys.path.insert(0, "/opt/tinyllm/compact"); model = sys.argv[1]; sys.argv = ["x", "--kind", os.environ.get("KIND", "qwen")]
 import compact_proxy as P, websearch as W
+from compactlib import stop_token
 D = "/opt/tinyllm/data/"; R = json.load(open(D + "ha_tablet_prompt.json"))
 def gen(prompt):
-    body = {"model": model, "prompt": prompt, "raw": True, "stream": False, "keep_alive": -1, "options": {"temperature": 0, "num_predict": 160, "num_ctx": 4096, "stop": ["<|im_end|>"]}}
-    return json.loads(urllib.request.urlopen(urllib.request.Request("http://localhost:11434/api/generate", data=json.dumps(body).encode(), headers={"Content-Type": "application/json"}), timeout=900).read())
+    body = {"model": model, "prompt": prompt, "raw": True, "stream": False, "keep_alive": -1, "options": {"temperature": 0, "num_predict": 160, "num_ctx": 4096, "stop": [stop_token(P.A.kind)]}}
+    return json.loads(urllib.request.urlopen(urllib.request.Request(os.environ.get("OLLAMA_URL", "http://localhost:11434") + "/api/generate", data=json.dumps(body).encode(), headers={"Content-Type": "application/json"}), timeout=900).read())
 CUR = {}
 def fake_search(q, n=4, timeout=8):
     CUR["q"] = q; return [{"titre": t, "extrait": e, "site": s} for (t, e, s) in CUR["res"]]
@@ -31,7 +32,7 @@ HA = ["Allume la lumière du salon", "Ferme les volets du salon", "Quelle est la
 stats = collections.defaultdict(list); lat = []; rows = []
 for x in web[::2]:        # un exemple synthetique sur deux (duree)
     msg, notes, info, dt = run(x["phrase"], parse_results(x["results_text"])); routed = info["web"] is not None; a = msg["content"]
-    ok = routed and ((not x["expect"] and "pas trouv" in a.lower()) or (x["expect"] and all(e.lower() in a.lower() for e in x["expect"]))); stats["web_" + x["cat"]].append((routed, ok)); lat.append(dt)
+    ok = bool(routed and ((not x["expect"] and "pas trouv" in a.lower()) or (x["expect"] and all(e.lower() in a.lower() for e in x["expect"])))); stats["web_" + x["cat"]].append((routed, ok)); lat.append(dt)
     rows.append((x["cat"], x["phrase"], routed, ok, a[:70]))
 for g in real:
     msg, notes, info, dt = run(g["phrase"], parse_results(g["results_text"])); routed = info["web"] is not None; stats["reel"].append((routed, routed and "pas trouv" not in msg["content"].lower())); rows.append(("reel", g["phrase"], routed, routed, msg["content"][:70]))
