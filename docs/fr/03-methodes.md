@@ -79,3 +79,16 @@ Les modèles de production sont des GGUF **Q4_K_M** (k-quants de llama.cpp, ~4,8
 - **92 phrases en français** (data/benchmark_fr_92.json) : lumières, volets, clim, scripts, listes, informations, culture générale, **pièges** (appareils inexistants), **transcriptions bruitées**, et cas **adverses** (capteurs indisponibles).
 - **Bancs** : premier appel d'outil ; requête exacte du framework + résultats d'outils simulés (succès ou erreur forcée) pour détecter boucles et fausses confirmations ; pipeline compact ; routage et justesse du web ; rejeux sous contrainte.
 - **Tests sûrs** : un *proxy de simulation* retire tous les appels d'outils, et un agent séparé rattaché à aucun pipeline permet de rejouer la requête exacte du framework **sans rien exécuter**.
+
+## Options de production ajoutées après le premier déploiement
+
+Toutes sont **désactivées par défaut** et activées par des variables d'environnement du proxy ; chacune a été déployée avec un retour arrière immédiat.
+
+| Option | Effet |
+|---|---|
+| `FAST_CONFIRM=1` | Quand tous les appels du tour sont des outils d'*action* et que la plateforme domotique annonce un succès complet, le proxy répond directement (« C'est fait. ») sans seconde génération : une génération économisée et plus aucun refus à tort après un succès. Lectures, erreurs et listes passent toujours par le modèle. |
+| `STT_FIXES_FILE=<json>` | Corrections des mots souvent mal entendus (`{"mal entendu": "correct"}`), insensibles aux accents et à la casse, **rechargées à chaud**. |
+| Préchauffage automatique | Le proxy mémorise la dernière vraie requête et préchauffe seul le cache de prompt du modèle (`POST /warm`, état dans `GET /health`). |
+| `METEO=1`, `HOME_LAT`, `HOME_LON` | Les questions de météo sont servies par une API météo sans clé (Open-Meteo) au lieu de la recherche web : chiffres fiables, cache de 10 minutes. |
+| `ANNOUNCE=1` | Avant une recherche web, le proxy envoie en premier fragment « Je cherche sur Internet… un instant », pour que la personne entende tout de suite que la demande est comprise et que cela prendra quelques secondes (nécessite une synthèse vocale en flux). |
+

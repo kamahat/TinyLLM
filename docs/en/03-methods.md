@@ -79,3 +79,16 @@ Production models are GGUF **Q4_K_M** (llama.cpp k-quants, ~4.8 bits per weight)
 - **92 French phrases** (data/benchmark_fr_92.json): lights, shutters, climate, scripts, lists, information, general knowledge, **traps** (non-existent devices), **noisy transcriptions**, and **adversarial** cases (sensors that are unavailable).
 - **Benches**: first tool call; exact framework request + simulated tool results (success or forced error) to detect loops and false confirmations; compact pipeline; web routing and accuracy; stress replays.
 - **Safe testing**: a *simulation proxy* strips every tool call, and a separate agent attached to no pipeline lets the exact framework request be replayed **without executing anything**.
+
+## Production options added after the first deployment
+
+All are **off by default** and switched on with environment variables of the proxy; each was deployed with an instant rollback.
+
+| Option | Effect |
+|---|---|
+| `FAST_CONFIRM=1` | When every tool call of the turn is an *action* tool and the home platform reports full success, the proxy answers directly ("Done.") without a second generation: one generation saved and no more spurious refusals after a success. Reads, errors and lists still go through the model. |
+| `STT_FIXES_FILE=<json>` | Corrections for words the speech recognizer often mishears (`{"misheard": "correct"}`), accent- and case-insensitive, **hot-reloaded**. |
+| Automatic warm-up | The proxy remembers the last real request and warms the model's prompt cache by itself (`POST /warm`, state in `GET /health`). |
+| `METEO=1`, `HOME_LAT`, `HOME_LON` | Weather questions are served by a keyless weather API (Open-Meteo) instead of web search: reliable figures, 10-minute cache. |
+| `ANNOUNCE=1` | Before a web search, the proxy streams "I am searching the Internet… one moment" as the first chunk, so the person hears at once that the request was understood and that it will take a few seconds (needs streaming text-to-speech). |
+
