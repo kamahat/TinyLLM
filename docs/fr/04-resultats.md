@@ -67,6 +67,7 @@ Banc au prompt de la tablette (46 phrases ; avec historique = tours précédents
 | Qwen3-1.7B v5 (compact + web) | Q4_K_M (imatrix) | 45/46 (98 %) | 43/46 (93 %) | 1/38 | 6/6 (100 %) | 0/33 | 4,9 s | 1,1 Go |
 | Qwen3-1.7B v5 (compact + web) | IQ4_XS (imatrix) | 44/46 (96 %) | 42/46 (91 %) | 1/38 | 6/6 (100 %) | 0/33 | 4,9 s | 1,0 Go |
 | Gemma 3 1B v5 (compact + web) | Q4_K_M | 41/46 (89 %) | 40/46 (87 %) | 0/38 | 6/6 (100 %) | 0/34 | 3,1 s | 0,81 Go |
+| Gemma 3 1B v6 (compact + web, pièges cohérents) | Q4_K_M | 40/46 (87 %) | 41/46 (89 %) | 1/38 | 6/6 (100 %) | 0/33 | 2,4 s | 0,81 Go |
 
 **Constats**
 - Le **prompt compact + proxy** est le gain principal : le même Qwen3-1.7B passe de 93 %/85 % (prompt du framework, v3) à **96 %/91 %** (v4c), avec un prompt 2,3 fois plus petit et une réponse plus rapide (5,0 s au lieu de 7,8 s).
@@ -118,6 +119,28 @@ Mêmes données d'entraînement et mêmes hyperparamètres (LoRA r=32, 1 époque
 - **Comparé à Qwen3-0,6B** (même classe de latence, 2,9 s, 93 % / 91 %, 0,4 Go), Gemma 3 1B n'est **ni plus précis ni plus petit** ; il est seulement meilleur sur les erreurs forcées (34/34 contre 32/34) et sur les réponses web réelles (13/22 contre 10/22).
 - **Verdict : non retenu.** Qwen3-1,7B reste en production ; Gemma 3 1B ne serait une option « plus rapide » viable que si son comportement sur les phrases pièges était corrigé avec davantage de données. Un seul essai, une époque, une recette réglée sur Qwen : un écart d'une ou deux phrases est du bruit.
 - **Piège rencontré en chemin** : après la fusion du LoRA, le dossier exporté avait perdu les fichiers de jetons spéciaux du tokenizer de base ; le GGUF découpait `<start_of_turn>` en texte ordinaire (+12 tokens) et le modèle demandait « Dans quelle pièce ? » au lieu d'appeler un outil. Voir les [leçons](06-lecons-et-limites.md).
+
+### Gemma 3 1B v6 : données de pièges cohérentes (deuxième essai)
+
+**Pourquoi.** En v5, les *mêmes* phrases pièges (« Éteins la télé… ») avaient deux étiquettes : 60 % « refuser sans appeler d'outil », 40 % « appeler l'outil, recevoir l'erreur, puis refuser ». Un petit modèle qui apprend une répartition 60/40 appelle l'outil sur une partie des pièges. La v6 garde **un seul comportement par situation** : tout appareil absent est refusé sans appel, et environ 390 exemples sur ~50 appareils, lumières et portes absents ont été ajoutés (pièges : 281 → 673 sur 5 197 exemples, 13 %). La phrase « télé du salon » a été retenue hors de l'entraînement pour mesurer la généralisation. Recette identique par ailleurs (1 époque).
+
+| Mesure (46 phrases) | Gemma 3 1B v5 | Gemma 3 1B v6 | Qwen3-1,7B v5 |
+|---|---|---|---|
+| Bon appel d'outil, sans / avec historique | 89 % / 87 % | 87 % / 89 % | 93 % / 96 % |
+| Ordres corrects (sur 38), sans / avec historique | 36 / 35 | 33 / 33 | n.d. |
+| Phrases pièges ayant déclenché un appel d'outil (sur 8) | 3 / 3 | **1 / 0** | 0 |
+| **Refus à tort après un succès**, sans / avec historique | 15/36 · 13/35 | **2/33 · 4/33** | 2/35 · 5/36 |
+| Adverses, erreur forcée | 6/6, 34/34 | 6/6, 31/34 | 6/6, 32/34 |
+| Génération d'une commande | 3,1 s | 2,4–2,7 s | 4,8 s |
+| Web : requêtes réelles, latence d'une question | 13/22, 8,6 s | 15/22, 8,9 s | 15/22, 16,5 s |
+| Web : recherches à tort sur 10 questions générales | 0 | 1 | 0 |
+
+**Constats**
+- **Le problème des pièges est réglé** : la seule phrase piège encore suivie d'un appel d'outil, et seulement sans historique, est celle mise de côté (« télé du salon ») ; les quatre autres sont refusées. Les refus à tort après un succès disparaissent presque.
+- **Mais trois commandes réelles régressent, dont deux dangereuses** : « Lis-moi la liste de courses » appelle le script qui **vide** la liste, « Mode cinéma » appelle le script qui **éteint** le cinéma, et « Remonte l'écran de projection » est refusé comme appareil inconnu. Deux appels d'outil apparaissent aussi après le deuxième tour.
+- **Lecture** : refuser davantage a appris au modèle à être moins attentif au *choix du script* ; avec 13 % des données consacrées aux refus, l'équilibre a bougé. Un essai d'une époque varie de 2 à 3 phrases : une partie de l'écart est du bruit.
+- **Verdict : non retenu** (un mauvais script sur une demande de lecture est exactement ce que les garde-fous ne rattrapent pas). Qwen3-1,7B reste en production. Une v7 ajouterait des exemples contrastés (lire ou vider la liste, cinéma allumé ou éteint, l'écran de projection), ramènerait la part de pièges à environ 8 %, entraînerait 2 époques et moyennerait plusieurs graines.
+- **Leçon générale** : étiqueter chaque situation avec **un seul** comportement ; deux étiquettes contradictoires sur la même entrée font choisir au hasard le comportement minoritaire par un petit modèle.
 
 ## 4. Recherche web (Qwen3-1.7B v5, SearXNG local)
 

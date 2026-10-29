@@ -23,6 +23,7 @@
 - Les attentes en arrière-plan du type `while pgrep -f "motif"` lancées par SSH se détectent **elles-mêmes** et ne se terminent jamais ; attendre plutôt un marqueur écrit dans un fichier de log.
 - Les moteurs de recherche publics limitent le débit en rafale (HTTP 429) ; mélanger extraits réels et synthétiques pour les données d'entraînement.
 - Après la fusion d'un LoRA, **vérifier que le dossier exporté contient toujours les fichiers du tokenizer de base** (`tokenizer.json`, `tokenizer.model`, `tokenizer_config.json`, `special_tokens_map.json`, `added_tokens.json`). Sans eux, le convertisseur GGUF ne marque pas `<start_of_turn>` comme jeton spécial : le prompt grossit de 12 tokens et le modèle répond par une question de clarification au lieu d'appeler un outil, sans aucune erreur. Toujours comparer le nombre de tokens du vrai prompt entre le tokenizer d'entraînement et le moteur d'inférence (`/tokenize` de llama.cpp) avant de mesurer.
+- **Un seul comportement par situation dans les données d'entraînement** : les mêmes phrases pièges étiquetées à la fois « refuser sans appel » (60 %) et « appeler, recevoir l'erreur, puis refuser » (40 %) faisaient appeler l'outil par Gemma 3 1B. Les rendre cohérentes a réglé les pièges mais, en surpondérant les refus, a dégradé le choix entre scripts voisins (« lis la liste » a appelé « vide la liste »). Surveiller dans le banc les paires dangereuses (lire / supprimer, allumer / éteindre).
 
 ## Limites de cette étude
 

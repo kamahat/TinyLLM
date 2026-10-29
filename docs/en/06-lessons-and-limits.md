@@ -23,6 +23,7 @@
 - Background waiters such as `while pgrep -f "pattern"` launched over SSH detect **themselves** and never end; wait on a marker written to a log file instead.
 - Public search engines throttle bursts (HTTP 429); mix real and synthetic snippets for training data.
 - After merging a LoRA, **check that the exported folder still has the base tokenizer files** (`tokenizer.json`, `tokenizer.model`, `tokenizer_config.json`, `special_tokens_map.json`, `added_tokens.json`). Without them the GGUF converter does not mark `<start_of_turn>` as a special token: the prompt grows by 12 tokens, and the model answers a clarification question instead of calling a tool, with no error anywhere. Always compare the token count of the real prompt between the training tokenizer and the inference engine (llama.cpp `/tokenize`) before benchmarking.
+- **One behaviour per situation in the training data**: the same trap phrases labelled both "refuse without a call" (60 %) and "call, get the error, then refuse" (40 %) made Gemma 3 1B call the tool on traps. Making them consistent fixed the traps but, by over-weighting refusals, degraded the choice between look-alike scripts ("read the list" called "empty the list"). Watch dangerous pairs (read vs delete, on vs off) in the benchmark.
 
 ## Limits of this study
 

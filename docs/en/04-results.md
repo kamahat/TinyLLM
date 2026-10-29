@@ -67,6 +67,7 @@ Tablet-prompt benchmark (46 phrases; with history = previous turns replayed; adv
 | Qwen3-1.7B v5 (compact + web) | Q4_K_M (imatrix) | 45/46 (98 %) | 43/46 (93 %) | 1/38 | 6/6 (100 %) | 0/33 | 4.9 s | 1.1 GB |
 | Qwen3-1.7B v5 (compact + web) | IQ4_XS (imatrix) | 44/46 (96 %) | 42/46 (91 %) | 1/38 | 6/6 (100 %) | 0/33 | 4.9 s | 1.0 GB |
 | Gemma 3 1B v5 (compact + web) | Q4_K_M | 41/46 (89 %) | 40/46 (87 %) | 0/38 | 6/6 (100 %) | 0/34 | 3.1 s | 0.81 GB |
+| Gemma 3 1B v6 (compact + web, consistent traps) | Q4_K_M | 40/46 (87 %) | 41/46 (89 %) | 1/38 | 6/6 (100 %) | 0/33 | 2.4 s | 0.81 GB |
 
 **Findings**
 - The **compact prompt + proxy** is the main gain: the same Qwen3-1.7B goes from 93 %/85 % (framework prompt, v3) to **96 %/91 %** (v4c), with a prompt 2.3 times smaller and a faster answer (5.0 s instead of 7.8 s).
@@ -118,6 +119,28 @@ Same training data and hyperparameters (LoRA r=32, 1 epoch), a different model f
 - **Compared with Qwen3-0.6B** (same latency class, 2.9 s, 93 % / 91 %, 0.4 GB), Gemma 3 1B is **not more accurate and not smaller**; it is only better on forced errors (34/34 against 32/34) and on real web answers (13/22 against 10/22).
 - **Verdict: not adopted.** Qwen3-1.7B stays in production; Gemma 3 1B would be a viable "faster" option only if its trap-phrase behaviour were fixed with more training data. One run, one epoch, a recipe tuned on Qwen: differences of one or two phrases are noise.
 - **Pitfall found on the way**: after merging the LoRA, the exported folder had lost the base tokenizer's special-token files, so the GGUF split `<start_of_turn>` into plain text (+12 tokens) and the model asked "Which room?" instead of calling a tool. See [lessons](06-lessons-and-limits.md).
+
+### Gemma 3 1B v6: consistent trap data (second attempt)
+
+**Why.** In v5, the *same* trap phrases ("Switch off the TV…") were labelled two ways: 60 % "refuse without calling a tool", 40 % "call the tool, get the error, then refuse". A small model that learns a 60/40 split calls the tool on some traps. v6 keeps **one behaviour per situation**: every absent device is refused without a call, and about 390 examples on ~50 absent appliances, lights and doors were added (traps: 281 → 673 of 5,197 examples, 13 %). The phrase "TV in the living room" was held out of training to measure generalisation. Same recipe otherwise (1 epoch).
+
+| Measure (46 phrases) | Gemma 3 1B v5 | Gemma 3 1B v6 | Qwen3-1.7B v5 |
+|---|---|---|---|
+| Correct tool call, no history / history | 89 % / 87 % | 87 % / 89 % | 93 % / 96 % |
+| Correct orders (of 38), no history / history | 36 / 35 | 33 / 33 | n/a |
+| Trap phrases that triggered a tool call (of 8) | 3 / 3 | **1 / 0** | 0 |
+| **Spurious refusal after a success**, no history / history | 15/36 · 13/35 | **2/33 · 4/33** | 2/35 · 5/36 |
+| Adversarial, forced error | 6/6, 34/34 | 6/6, 31/34 | 6/6, 32/34 |
+| Generation of one command | 3.1 s | 2.4–2.7 s | 4.8 s |
+| Web: real queries, question latency | 13/22, 8.6 s | 15/22, 8.9 s | 15/22, 16.5 s |
+| Web: spurious searches on 10 general questions | 0 | 1 | 0 |
+
+**Findings**
+- **The trap problem is fixed**: the only trap phrase still answered with a tool call, and only without history, is the held-out one ("TV in the living room"); the other four are refused. Spurious refusals after a success almost disappear.
+- **But three real commands regressed, two of them dangerous**: "Read me the shopping list" calls the script that **empties** the list, "Cinema mode" calls the script that **switches the cinema off**, and "Raise the projection screen" is refused as an unknown device. Two tool calls also appear after the second turn.
+- **Reading**: refusing more taught the model to be less careful about *which* script to pick; with 13 % of the data devoted to refusals the balance moved. One run of one epoch varies by 2–3 phrases, so part of the gap is noise.
+- **Verdict: not adopted** (a wrong script call on a read request is exactly what the guard-rails cannot catch). Qwen3-1.7B stays in production. A v7 would add contrastive examples (read vs empty the list, cinema on vs off, the projection screen), lower the trap share to about 8 %, train 2 epochs and average several seeds.
+- **General lesson**: label each situation with **one** behaviour; two contradictory labels on the same input make a small model pick the minority behaviour at random.
 
 ## 4. Web search (Qwen3-1.7B v5, local SearXNG)
 
