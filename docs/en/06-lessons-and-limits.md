@@ -24,6 +24,7 @@
 - Public search engines throttle bursts (HTTP 429); mix real and synthetic snippets for training data.
 - After merging a LoRA, **check that the exported folder still has the base tokenizer files** (`tokenizer.json`, `tokenizer.model`, `tokenizer_config.json`, `special_tokens_map.json`, `added_tokens.json`). Without them the GGUF converter does not mark `<start_of_turn>` as a special token: the prompt grows by 12 tokens, and the model answers a clarification question instead of calling a tool, with no error anywhere. Always compare the token count of the real prompt between the training tokenizer and the inference engine (llama.cpp `/tokenize`) before benchmarking.
 - **One behaviour per situation in the training data**: the same trap phrases labelled both "refuse without a call" (60 %) and "call, get the error, then refuse" (40 %) made Gemma 3 1B call the tool on traps. Making them consistent fixed the traps but, by over-weighting refusals, degraded the choice between look-alike scripts ("read the list" called "empty the list"). Watch dangerous pairs (read vs delete, on vs off) in the benchmark.
+- **Train at least two seeds before comparing models**: two identical Gemma 3 1B runs differed by one parasitic script call each (different phrases) and by 3 phrases on real web queries. A single run cannot tell a real regression from noise. Also keep the benchmark phrases **out of the training data** (exact forms) and add contrastive pairs for look-alike scripts.
 
 ## Limits of this study
 

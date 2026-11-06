@@ -68,6 +68,8 @@ Banc au prompt de la tablette (46 phrases ; avec historique = tours précédents
 | Qwen3-1.7B v5 (compact + web) | IQ4_XS (imatrix) | 44/46 (96 %) | 42/46 (91 %) | 1/38 | 6/6 (100 %) | 0/33 | 4,9 s | 1,0 Go |
 | Gemma 3 1B v5 (compact + web) | Q4_K_M | 41/46 (89 %) | 40/46 (87 %) | 0/38 | 6/6 (100 %) | 0/34 | 3,1 s | 0,81 Go |
 | Gemma 3 1B v6 (compact + web, pièges cohérents) | Q4_K_M | 40/46 (87 %) | 41/46 (89 %) | 1/38 | 6/6 (100 %) | 0/33 | 2,4 s | 0,81 Go |
+| Gemma 3 1B v7, graine 9 (pièges cohérents + paires contrastées) | Q4_K_M | 44/46 (96 %) | 42/46 (91 %) | 1/38 | 6/6 (100 %) | 0/33 | 2,3 s | 0,81 Go |
+| Gemma 3 1B v7, graine 22 | Q4_K_M | 44/46 (96 %) | 43/46 (93 %) | 1/38 | 6/6 (100 %) | 0/33 | 2,3 s | 0,81 Go |
 
 **Constats**
 - Le **prompt compact + proxy** est le gain principal : le même Qwen3-1.7B passe de 93 %/85 % (prompt du framework, v3) à **96 %/91 %** (v4c), avec un prompt 2,3 fois plus petit et une réponse plus rapide (5,0 s au lieu de 7,8 s).
@@ -141,6 +143,29 @@ Mêmes données d'entraînement et mêmes hyperparamètres (LoRA r=32, 1 époque
 - **Lecture** : refuser davantage a appris au modèle à être moins attentif au *choix du script* ; avec 13 % des données consacrées aux refus, l'équilibre a bougé. Un essai d'une époque varie de 2 à 3 phrases : une partie de l'écart est du bruit.
 - **Verdict : non retenu** (un mauvais script sur une demande de lecture est exactement ce que les garde-fous ne rattrapent pas). Qwen3-1,7B reste en production. Une v7 ajouterait des exemples contrastés (lire ou vider la liste, cinéma allumé ou éteint, l'écran de projection), ramènerait la part de pièges à environ 8 %, entraînerait 2 époques et moyennerait plusieurs graines.
 - **Leçon générale** : étiqueter chaque situation avec **un seul** comportement ; deux étiquettes contradictoires sur la même entrée font choisir au hasard le comportement minoritaire par un petit modèle.
+
+### Gemma 3 1B v7 : paires contrastées et deux graines (troisième essai)
+
+**Ce qui change.** La v6 réglait les pièges mais confondait des scripts voisins (« Lis-moi la liste de courses » appelait le script qui la vide). La v7 garde un seul comportement par situation, ramène la part de pièges à 8,3 % (421 exemples sur 5 066) et ajoute environ 120 **exemples contrastés** : formes nues de cinéma allumé/éteint (« Mode cinéma », « Fin du cinéma »), et lire ou vider la liste (« Qu'est-ce qu'il y a sur la liste ? » contre « Efface toute la liste »). Les **46 phrases du banc sont exclues de l'entraînement** (formes exactes), donc les chiffres mesurent la généralisation. Une époque sur davantage d'exemples distincts (3 600 + 2 250) au lieu d'un petit sous-ensemble répété. Pour mesurer le bruit, il a été entraîné **deux fois** (graines 9 et 22) sur les mêmes données.
+
+| Mesure (46 phrases) | Gemma 3 1B v5 | v6 | **v7, graine 9** | **v7, graine 22** | Qwen3-1,7B v5 |
+|---|---|---|---|---|---|
+| Bon appel d'outil, sans / avec historique | 89 % / 87 % | 87 % / 89 % | **96 % / 91 %** | **96 % / 93 %** | 93 % / 96 % |
+| Ordres corrects (sur 38), sans / avec historique | 36 / 35 | 33 / 33 | 36 / 34 | 36 / 36 | n.d. |
+| Phrases pièges ayant déclenché un appel d'outil (sur 8) | 3 / 3 | 1 / 0 | **0 / 0** | **0 / 1** | 0 |
+| Refus à tort après un succès | 15/36 · 13/35 | 2/33 · 4/33 | **0 · 0** | **0 · 0** | 2/35 · 5/36 |
+| Adverses, erreur forcée | 6/6, 34/34 | 6/6, 31/34 | 6/6, 33/34 | 6/6, 32/34 | 6/6, 32/34 |
+| Génération d'une commande | 3,1 s | 2,4–2,7 s | 2,3–2,7 s | 2,3–2,6 s | 4,8 s |
+| Web : requêtes réelles, latence d'une question | 13/22, 8,6 s | 15/22, 8,9 s | 13/22, 8,8 s | 10/22, 8,4 s | 15/22, 16,5 s |
+| Web : recherches à tort sur 10 questions générales | 0 | 1 | 0 | 1 | 0 |
+
+**Constats**
+- **Les gains se reproduisent sur les deux graines** : 96 % sans historique, pièges à 0–1 sur 8 (y compris « télé du salon » mise de côté), aucun refus à tort, et une génération deux fois plus rapide que Qwen3-1,7B.
+- **Mais les erreurs diffèrent d'une graine à l'autre**, signature du bruit : la graine 9 répond à « Mode cinéma » par *cinéma éteint* (avec historique) ; la graine 22 répond à « Donne-moi une idée de dessert rapide » en appelant **le script cinéma**, et envoie `area` au lieu de `name` pour « Éteins les lumières de la cuisine ». Les deux lisent la phrase bruitée « Et un lumière tapisserie » dans le mauvais sens (éteint au lieu d'allumer).
+- **Avec historique, chaque graine fait environ un appel de script parasite sur 46 phrases.** Dans une maison, c'est acceptable pour une lumière, pas pour un script qui vide une liste ou allume une pièce. Qwen3-1,7B n'a pas ce type d'erreur sur ce banc.
+- **Garde-fou peu coûteux à essayer** (non testé) : dans le proxy, rejeter tout appel `script__*` quand la phrase de l'utilisateur ne partage aucun mot-clé avec le script ou ses alias. Il aurait bloqué « dessert → cinéma allumé », mais pas « Mode cinéma → cinéma éteint » (vrai script, mauvais sens).
+- **Verdict** : Gemma 3 1B v7 est un sérieux candidat « rapide » (latence divisée par deux, fichier 27 % plus petit, aussi juste sans historique), mais il n'est **pas retenu** : les erreurs résiduelles sont aléatoires, rares et difficiles à prévoir, et un banc de 46 phrases ne permet pas d'en exclure d'autres. Suites possibles : garde-fou, banc plus large, vraies voix, troisième graine.
+- **Leçon générale** : entraîner toujours **au moins deux graines** avant de comparer des modèles. Un seul essai cache un écart de 2 à 3 phrases, plus grand que la plupart des différences que l'on cherchait à lire.
 
 ## 4. Recherche web (Qwen3-1.7B v5, SearXNG local)
 

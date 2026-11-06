@@ -70,6 +70,8 @@ KIND=gemma scripts/bench/quant_tests.sh mon-modele-gemma gemma3
 python3 scripts/bench/speed_bench.py mon-modele-gemma@gemma mon-modele-qwen     # NOM@FORMAT, qwen par défaut
 ```
 
+Pour la recette v7 (pièges cohérents + paires contrastées, phrases du banc exclues) : `python3 scripts/training/make_v7.py`, puis `scripts/brain/session_gemma_v7.sh` (une époque, 3 600 + 2 250 échantillons) ; une seconde graine avec `SEED=22` (`session_gemma_v7s2.sh`). `train_v4c.py` lit la graine dans la variable d'environnement `SEED` (9 par défaut). Comparer les **deux** graines avant de conclure.
+
 Avant de mesurer, vérifier que llama.cpp tokenise le vrai prompt comme le tokenizer d'entraînement (même nombre de tokens, `<start_of_turn>` est un seul token).
 
 ## Règles à conserver

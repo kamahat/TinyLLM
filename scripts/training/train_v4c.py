@@ -9,7 +9,7 @@ ap = argparse.ArgumentParser()
 ap.add_argument("--base", required=True); ap.add_argument("--kind", required=True); ap.add_argument("--out", required=True); ap.add_argument("--data", default="/var/lib/tinyllm/data"); ap.add_argument("--tok-server", default="")
 ap.add_argument("--n1", type=int, default=2600); ap.add_argument("--n2", type=int, default=1700); ap.add_argument("--lr", type=float, default=2e-4); ap.add_argument("--accum", type=int, default=8)
 ap.add_argument("--r", type=int, default=32); ap.add_argument("--maxlen", type=int, default=2000); ap.add_argument("--epochs", type=float, default=1)
-a = ap.parse_args(); random.seed(9); torch.manual_seed(9)
+a = ap.parse_args(); SEED = int(os.environ.get("SEED", "9")); random.seed(SEED); torch.manual_seed(SEED)
 D = a.data + "/"; rows = json.load(open(D + os.environ.get("TRAIN_FILE", "train_v4c.json"))); T = compact_tools(json.load(open(D + "ha_tablet_prompt.json"))["tools"])
 tok = AutoTokenizer.from_pretrained(a.base)
 import urllib.request

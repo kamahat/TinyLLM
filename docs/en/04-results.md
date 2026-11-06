@@ -68,6 +68,8 @@ Tablet-prompt benchmark (46 phrases; with history = previous turns replayed; adv
 | Qwen3-1.7B v5 (compact + web) | IQ4_XS (imatrix) | 44/46 (96 %) | 42/46 (91 %) | 1/38 | 6/6 (100 %) | 0/33 | 4.9 s | 1.0 GB |
 | Gemma 3 1B v5 (compact + web) | Q4_K_M | 41/46 (89 %) | 40/46 (87 %) | 0/38 | 6/6 (100 %) | 0/34 | 3.1 s | 0.81 GB |
 | Gemma 3 1B v6 (compact + web, consistent traps) | Q4_K_M | 40/46 (87 %) | 41/46 (89 %) | 1/38 | 6/6 (100 %) | 0/33 | 2.4 s | 0.81 GB |
+| Gemma 3 1B v7, seed 9 (consistent traps + contrastive pairs) | Q4_K_M | 44/46 (96 %) | 42/46 (91 %) | 1/38 | 6/6 (100 %) | 0/33 | 2.3 s | 0.81 GB |
+| Gemma 3 1B v7, seed 22 | Q4_K_M | 44/46 (96 %) | 43/46 (93 %) | 1/38 | 6/6 (100 %) | 0/33 | 2.3 s | 0.81 GB |
 
 **Findings**
 - The **compact prompt + proxy** is the main gain: the same Qwen3-1.7B goes from 93 %/85 % (framework prompt, v3) to **96 %/91 %** (v4c), with a prompt 2.3 times smaller and a faster answer (5.0 s instead of 7.8 s).
@@ -141,6 +143,29 @@ Same training data and hyperparameters (LoRA r=32, 1 epoch), a different model f
 - **Reading**: refusing more taught the model to be less careful about *which* script to pick; with 13 % of the data devoted to refusals the balance moved. One run of one epoch varies by 2–3 phrases, so part of the gap is noise.
 - **Verdict: not adopted** (a wrong script call on a read request is exactly what the guard-rails cannot catch). Qwen3-1.7B stays in production. A v7 would add contrastive examples (read vs empty the list, cinema on vs off, the projection screen), lower the trap share to about 8 %, train 2 epochs and average several seeds.
 - **General lesson**: label each situation with **one** behaviour; two contradictory labels on the same input make a small model pick the minority behaviour at random.
+
+### Gemma 3 1B v7: contrastive pairs and two seeds (third attempt)
+
+**What changed.** v6 fixed the traps but confused look-alike scripts ("Read me the shopping list" called the script that empties it). v7 keeps one behaviour per situation, lowers the trap share to 8.3 % (421 of 5,066 examples) and adds about 120 **contrastive examples**: bare forms of cinema on/off ("Cinema mode", "End of the cinema"), and read versus empty the list ("What is on the list?" versus "Wipe the whole list"). The **46 benchmark phrases are excluded from training** (exact forms), so the figures measure generalisation. One epoch on more distinct samples (3,600 + 2,250) instead of a small subset repeated. To measure noise, it was trained **twice** (seeds 9 and 22) on the same data.
+
+| Measure (46 phrases) | Gemma 3 1B v5 | v6 | **v7, seed 9** | **v7, seed 22** | Qwen3-1.7B v5 |
+|---|---|---|---|---|---|
+| Correct tool call, no history / history | 89 % / 87 % | 87 % / 89 % | **96 % / 91 %** | **96 % / 93 %** | 93 % / 96 % |
+| Correct orders (of 38), no history / history | 36 / 35 | 33 / 33 | 36 / 34 | 36 / 36 | n/a |
+| Trap phrases that triggered a tool call (of 8) | 3 / 3 | 1 / 0 | **0 / 0** | **0 / 1** | 0 |
+| Spurious refusal after a success | 15/36 · 13/35 | 2/33 · 4/33 | **0 · 0** | **0 · 0** | 2/35 · 5/36 |
+| Adversarial, forced error | 6/6, 34/34 | 6/6, 31/34 | 6/6, 33/34 | 6/6, 32/34 | 6/6, 32/34 |
+| Generation of one command | 3.1 s | 2.4–2.7 s | 2.3–2.7 s | 2.3–2.6 s | 4.8 s |
+| Web: real queries, question latency | 13/22, 8.6 s | 15/22, 8.9 s | 13/22, 8.8 s | 10/22, 8.4 s | 15/22, 16.5 s |
+| Web: spurious searches on 10 general questions | 0 | 1 | 0 | 1 | 0 |
+
+**Findings**
+- **The gains reproduce on both seeds**: 96 % without history, traps at 0–1 of 8 (including the held-out "TV in the living room"), no spurious refusal, and a generation twice as fast as Qwen3-1.7B.
+- **But the errors are different from one seed to the other**, which is the signature of noise: seed 9 answers "Cinema mode" with *cinema off* (with history); seed 22 answers "Give me a quick dessert idea" by calling **the cinema script**, and sends `area` instead of `name` for "Switch off the kitchen lights". Both read the noisy phrase "And a light tapestry" in the wrong direction (switch off instead of on).
+- **With history, each seed makes about one parasitic script call in 46 phrases.** On a home that is acceptable for a light, not for a script that empties a list or switches a room on. Qwen3-1.7B has no such error on this benchmark.
+- **A cheap guard-rail to try** (not tested): in the proxy, reject any `script__*` call when the user's sentence shares no keyword with the script or its aliases. It would have blocked "dessert → cinema on", but not "Cinema mode → cinema off" (a real script, wrong direction).
+- **Verdict**: Gemma 3 1B v7 is a serious "fast" candidate (half the latency, 27 % smaller, as accurate without history), but it is **not adopted**: the residual errors are random, rare and hard to predict, and a benchmark of 46 phrases cannot rule out more of them. Next steps would be a guard-rail, a larger benchmark, real voices and a third seed.
+- **General lesson**: always train at least **two seeds** before comparing models. A single run hides a spread of 2–3 phrases that is larger than most of the differences we were trying to read.
 
 ## 4. Web search (Qwen3-1.7B v5, local SearXNG)
 

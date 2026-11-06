@@ -70,6 +70,8 @@ KIND=gemma scripts/bench/quant_tests.sh my-gemma-model gemma3
 python3 scripts/bench/speed_bench.py my-gemma-model@gemma my-qwen-model     # NAME@FORMAT, qwen by default
 ```
 
+For the v7 recipe (consistent traps + contrastive pairs, benchmark phrases excluded): `python3 scripts/training/make_v7.py`, then `scripts/brain/session_gemma_v7.sh` (one epoch, 3,600 + 2,250 samples); a second seed with `SEED=22` (`session_gemma_v7s2.sh`). `train_v4c.py` reads the seed from the `SEED` environment variable (default 9). Compare the **two** seeds before concluding.
+
 Before benchmarking, check that llama.cpp tokenizes the real prompt like the training tokenizer does (same token count, `<start_of_turn>` is a single token).
 
 ## Rules worth keeping
